@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Emergency Callback System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-speedometer2"></i> Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Callback
+            </a>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-stat">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Total Calls Today</h6>
+                        <h3 class="mb-0">{{ total_calls_today }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-telephone fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stat success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Completed Calls</h6>
+                        <h3 class="mb-0">{{ completed_calls_today }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stat danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Failed Calls</h6>
+                        <h3 class="mb-0">{{ failed_calls_today }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-x-circle fs-2 text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stat warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Ratings Collected</h6>
+                        <h3 class="mb-0">{{ total_ratings_today }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-star fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rating Overview -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-bar-chart"></i> Today's Average Rating</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-warning">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= avg_rating_today %}
+                            <i class="bi bi-star-fill rating-stars"></i>
+                        {% else %}
+                            <i class="bi bi-star rating-stars"></i>
+                        {% endif %}
+                    {% endfor %}
+                </h2>
+                <h3 class="mb-0">{{ avg_rating_today }}/5.0</h3>
+                <p class="text-muted">Based on {{ total_ratings_today }} ratings</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-pie-chart"></i> Rating Distribution</h5>
+            </div>
+            <div class="card-body">
+                {% for dist in rating_distribution %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= dist.rating %}
+                                <i class="bi bi-star-fill rating-stars"></i>
+                            {% else %}
+                                <i class="bi bi-star rating-stars"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="flex-grow-1 mx-3">
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-warning" style="width: {{ dist.percentage }}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary">{{ dist.count }} ({{ dist.percentage }}%)</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No ratings collected today</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Calls -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-clock-history"></i> Recent Calls</h5>
+                <a href="{% url 'callbacks:list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_calls %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Phone Number</th>
+                                <th>Team</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Requested By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for callback in recent_calls %}
+                            <tr>
+                                <td>
+                                    <strong>{{ callback.phone_number }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ callback.team.name }}</span>
+                                </td>
+                                <td>
+                                    {% if callback.status == 'completed' %}
+                                        <span class="badge bg-success">{{ callback.get_status_display }}</span>
+                                    {% elif callback.status == 'failed' %}
+                                        <span class="badge bg-danger">{{ callback.get_status_display }}</span>
+                                    {% elif callback.status == 'pending' %}
+                                        <span class="badge bg-warning">{{ callback.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ callback.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ callback.created_at|date:"M d, H:i" }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ callback.requested_by.username }}</small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'callbacks:detail' callback.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-telephone-x fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No calls yet today</p>
+                    <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create First Callback
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto refresh every 30 seconds
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Emergency Callback System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-plus-circle"></i> {{ title }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-telephone-plus"></i> Callback Request Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                            <i class="bi bi-telephone"></i> Phone Number <span class="text-danger">*</span>
+                        </label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.phone_number.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> 
+                            Enter phone number in format: 998901234567 (with country code)
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.team.id_for_label }}" class="form-label">
+                            <i class="bi bi-people"></i> Emergency Team <span class="text-danger">*</span>
+                        </label>
+                        {{ form.team }}
+                        {% if form.team.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.team.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> 
+                            Select the emergency team that attended to this patient
+                        </div>
+                    </div>
+                    
+                    <!-- Information Box -->
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> What happens next?</h6>
+                        <ul class="mb-0">
+                            <li>The system will automatically call the provided number</li>
+                            <li>Patient will be asked to rate the service (1-5 stars)</li>
+                            <li>Option to transfer to operator for additional questions</li>
+                            <li>All ratings are stored for quality analysis</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-telephone-outbound"></i> Create Callback Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="bi bi-bar-chart"></i> Quick Stats</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h5 class="text-primary mb-0">{{ today_calls|default:0 }}</h5>
+                        <small class="text-muted">Calls Today</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-success mb-0">{{ today_completed|default:0 }}</h5>
+                        <small class="text-muted">Completed</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-warning mb-0">{{ today_ratings|default:0 }}</h5>
+                        <small class="text-muted">Ratings</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Side Panel with Tips -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6><i class="bi bi-lightbulb"></i> Tips for Success</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="bi bi-telephone"></i> Phone Numbers</h6>
+                    <ul class="small mb-0">
+                        <li>Include country code (998 for Uzbekistan)</li>
+                        <li>Verify number before submitting</li>
+                        <li>Mobile numbers work best</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-clock"></i> Best Call Times</h6>
+                    <ul class="small mb-0">
+                        <li>Weekdays: 9 AM - 6 PM</li>
+                        <li>Avoid early morning/late evening</li>
+                        <li>Consider patient recovery time</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h6><i class="bi bi-star"></i> Rating System</h6>
+                    <ul class="small mb-0">
+                        <li>1 = Very Poor</li>
+                        <li>2 = Poor</li>
+                        <li>3 = Average</li>
+                        <li>4 = Good</li>
+                        <li>5 = Excellent</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h6><i class="bi bi-question-circle"></i> Need Help?</h6>
+            </div>
+            <div class="card-body">
+                <p class="small">If you encounter any issues:</p>
+                <ul class="small">
+                    <li>Check phone number format</li>
+                    <li>Ensure team is selected</li>
+                    <li>Contact system administrator</li>
+                </ul>
+                {% if user.is_staff %}
+                <a href="/admin/" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-gear"></i> Admin Panel
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Phone number formatting
+document.getElementById('id_phone_number').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    
+    // Auto-add 998 prefix if needed
+    if (value.length > 0 && !value.startsWith('998')) {
+        if (value.startsWith('9') && value.length === 9) {
+            value = '998' + value;
+        } else if (value.length === 9) {
+            value = '998' + value;
+        }
+    }
+    
+    e.target.value = value;
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const phoneNumber = document.getElementById('id_phone_number').value;
+    const team = document.getElementById('id_team').value;
+    
+    if (!phoneNumber || phoneNumber.length < 12) {
+        alert('Please enter a valid phone number with country code (e.g., 998901234567)');
+        e.preventDefault();
+        return;
+    }
+    
+    if (!team) {
+        alert('Please select an emergency team');
+        e.preventDefault();
+        return;
+    }
+    
+    // Confirm submission
+    const confirmMsg = `Create callback request for ${phoneNumber} with team ${document.getElementById('id_team').selectedOptions[0].text}?`;
+    if (!confirm(confirmMsg)) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

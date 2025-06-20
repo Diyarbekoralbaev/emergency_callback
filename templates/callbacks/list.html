@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}Callbacks - Emergency Callback System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-telephone"></i> Callbacks</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Callback
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6><i class="bi bi-funnel"></i> Filters</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    {% for status_code, status_name in statuses %}
+                    <option value="{{ status_code }}" {% if status_code == current_status %}selected{% endif %}>
+                        {{ status_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="team" class="form-label">Team</label>
+                <select name="team" id="team" class="form-select">
+                    <option value="">All Teams</option>
+                    {% for team in teams %}
+                    <option value="{{ team.id }}" {% if team.id|stringformat:"s" == current_team %}selected{% endif %}>
+                        {{ team.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" name="search" id="search" class="form-control" 
+                       placeholder="Phone number or team name..." value="{{ search }}">
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Callbacks Table -->
+<div class="card">
+    <div class="card-header">
+        <h6><i class="bi bi-list-ul"></i> Callback Requests</h6>
+    </div>
+    <div class="card-body">
+        {% if callbacks %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Phone Number</th>
+                        <th>Team</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Duration</th>
+                        <th>Requested By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for callback in callbacks %}
+                    <tr>
+                        <td>
+                            <strong>{{ callback.phone_number }}</strong>
+                            {% if callback.call_id %}
+                                <br><small class="text-muted">ID: {{ callback.call_id|slice:":8" }}...</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ callback.team.name }}</span>
+                        </td>
+                        <td>
+                            {% if callback.status == 'completed' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> {{ callback.get_status_display }}
+                                </span>
+                            {% elif callback.status == 'failed' %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> {{ callback.get_status_display }}
+                                </span>
+                            {% elif callback.status == 'pending' %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-clock"></i> {{ callback.get_status_display }}
+                                </span>
+                            {% elif callback.status == 'dialing' %}
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-telephone-outbound"></i> {{ callback.get_status_display }}
+                                </span>
+                            {% elif callback.status == 'answered' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-telephone-fill"></i> {{ callback.get_status_display }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ callback.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ callback.created_at|date:"M d, H:i" }}</small>
+                        </td>
+                        <td>
+                            {% if callback.call_started_at and callback.call_ended_at %}
+                                {% with duration=callback.call_ended_at|timesince:callback.call_started_at %}
+                                <small class="text-muted">{{ duration }}</small>
+                                {% endwith %}
+                            {% elif callback.call_started_at %}
+                                <small class="text-success">In progress...</small>
+                            {% else %}
+                                <small class="text-muted">-</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ callback.requested_by.username }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'callbacks:detail' callback.pk %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if callback.status == 'failed' and user == callback.requested_by %}
+                                <button class="btn btn-outline-warning" onclick="retryCall({{ callback.pk }})">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Show total count -->
+        <div class="mt-3">
+            <small class="text-muted">
+                Showing {{ callbacks|length }} callback{{ callbacks|length|pluralize }}
+                {% if search or current_status or current_team %}
+                    (filtered)
+                {% endif %}
+            </small>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-telephone-x fs-1 text-muted"></i>
+            <p class="text-muted mt-3">
+                {% if search or current_status or current_team %}
+                    No callbacks found matching your filters
+                {% else %}
+                    No callback requests yet
+                {% endif %}
+            </p>
+            {% if not search and not current_status and not current_team %}
+            <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create First Callback
+            </a>
+            {% else %}
+            <a href="{% url 'callbacks:list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Clear Filters
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function retryCall(callbackId) {
+    if (confirm('Are you sure you want to retry this call?')) {
+        // In a real implementation, you would make an AJAX call to retry the callback
+        alert('Retry functionality would be implemented here');
+    }
+}
+
+// Auto refresh every 30 seconds for active calls
+setInterval(function() {
+    // Only refresh if there are pending/dialing calls
+    const activeStatuses = document.querySelectorAll('.badge.bg-primary, .badge.bg-warning');
+    if (activeStatuses.length > 0) {
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

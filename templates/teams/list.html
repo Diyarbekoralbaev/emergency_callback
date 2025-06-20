@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}Teams - Emergency Callback System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-people"></i> Emergency Teams</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'teams:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Team
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Search teams by name..." value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Teams Grid -->
+{% if teams %}
+<div class="row">
+    {% for team in teams %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-people-fill"></i> {{ team.name }}
+                </h6>
+                {% if team.is_active %}
+                    <span class="badge bg-success">Active</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Team ID:</strong> <span class="font-monospace">#{{ team.id }}</span>
+                </div>
+                
+                {% if team.description %}
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p class="text-muted small">{{ team.description|truncatewords:15 }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <strong>Created:</strong>
+                    <small class="text-muted">{{ team.created_at|date:"M d, Y" }}</small>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Created by:</strong>
+                    <small class="text-muted">{{ team.created_by.username }}</small>
+                </div>
+                
+                <!-- Team Statistics -->
+                <div class="row text-center mt-3">
+                    <div class="col-4">
+                        <h6 class="text-primary mb-0">{{ team.callback_count|default:0 }}</h6>
+                        <small class="text-muted">Callbacks</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-success mb-0">{{ team.rating_count|default:0 }}</h6>
+                        <small class="text-muted">Ratings</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-warning mb-0">{{ team.avg_rating|default:"N/A" }}</h6>
+                        <small class="text-muted">Avg Rating</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="btn-group w-100">
+                    <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <button class="btn btn-outline-info btn-sm" onclick="showTeamStats({{ team.id }})">
+                        <i class="bi bi-bar-chart"></i> Stats
+                    </button>
+                    {% if team.is_active %}
+                    <a href="{% url 'teams:delete' team.pk %}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash"></i> Deactivate
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Show total count -->
+<div class="mt-3">
+    <small class="text-muted">
+        Showing {{ teams|length }} team{{ teams|length|pluralize }}
+        {% if search %}
+            matching "{{ search }}"
+        {% endif %}
+    </small>
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-people fs-1 text-muted"></i>
+    <p class="text-muted mt-3">
+        {% if search %}
+            No teams found matching "{{ search }}"
+        {% else %}
+            No emergency teams created yet
+        {% endif %}
+    </p>
+    {% if not search %}
+    <a href="{% url 'teams:create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Create First Team
+    </a>
+    {% else %}
+    <a href="{% url 'teams:list' %}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Show All Teams
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Team Statistics Modal -->
+<div class="modal fade" id="teamStatsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-bar-chart"></i> Team Statistics</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="teamStatsModalBody">
+                Loading...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="exportTeamStats()">
+                    <i class="bi bi-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTeamStats(teamId) {
+    const modalBody = document.getElementById('teamStatsModalBody');
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('teamStatsModal'));
+    modal.show();
+    
+    // Simulate loading team statistics
+    setTimeout(() => {
+        modalBody.innerHTML = `
+            <div class="row mb-4">
+                <div class="col-md-3 text-center">
+                    <h3 class="text-primary">24</h3>
+                    <p class="text-muted">Total Callbacks</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-success">22</h3>
+                    <p class="text-muted">Completed</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-warning">18</h3>
+                    <p class="text-muted">Ratings</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-info">4.2</h3>
+                    <p class="text-muted">Avg Rating</p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Rating Distribution</h6>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>5 Stars</span>
+                            <span>8 (44%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success" style="width: 44%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>4 Stars</span>
+                            <span>6 (33%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-info" style="width: 33%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>3 Stars</span>
+                            <span>3 (17%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-warning" style="width: 17%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>2 Stars</span>
+                            <span>1 (6%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-danger" style="width: 6%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>1 Star</span>
+                            <span>0 (0%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-dark" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6>Recent Activity</h6>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Last callback</span>
+                            <small class="text-muted">2 hours ago</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Last rating</span>
+                            <small class="text-muted">3 hours ago</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>This week</span>
+                            <small class="text-muted">12 callbacks</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>This month</span>
+                            <small class="text-muted">48 callbacks</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }, 1000);
+}
+
+function exportTeamStats() {
+    // Create and download CSV
+    const csvContent = "data:text/csv;charset=utf-8," + 
+        "Metric,Value\n" +
+        "Total Callbacks,24\n" +
+        "Completed,22\n" +
+        "Ratings,18\n" +
+        "Average Rating,4.2\n";
+    
+    const link = document.createElement('a');
+    link.href = encodeURI(csvContent);
+    link.download = 'team_statistics.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

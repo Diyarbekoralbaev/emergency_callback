@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Emergency Callback System{% endblock %}
+
+{% block login_content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card mt-5">
+            <div class="card-header bg-primary text-white text-center">
+                <h4><i class="bi bi-telephone-fill"></i> Emergency Callback System</h4>
+                <p class="mb-0">Please sign in to continue</p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="bi bi-person"></i> Username
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            <i class="bi bi-lock"></i> Password
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center text-muted">
+                <small>Contact administrator for account access</small>
+            </div>
+        </div>
+        
+        <!-- Demo Credentials -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="bi bi-info-circle"></i> Demo Credentials</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Admin:</strong> admin / admin123</p>
+                <p class="mb-0"><strong>Operator:</strong> operator / operator123</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
