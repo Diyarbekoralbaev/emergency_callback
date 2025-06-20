@@ -134,6 +134,8 @@ AMBULANCE_CONFIG = {
     'AMI_USERNAME': 'astmanager',
     'AMI_SECRET': '02052005',
     'CALLER_ID' : '"Ambulance Service" <781138081>',
+    'MAX_CHANNELS': 2,
+    'OPERATOR_EXTENSION': '101',  # Operator extension for transfers
     'CALL_TIMEOUT': 60,  # seconds
     'AUDIO_FILES': {
         'rating_request': 'ambulance-rating-request',
@@ -144,9 +146,20 @@ AMBULANCE_CONFIG = {
         'transfer_message': 'ambulance-transfer-message',
         'transfer_error': 'ambulance-transfer-error',
         'goodbye': 'ambulance-goodbye'
-    }
+    },
+
+    'RATING_RETRY_LIMIT': 3,  # How many times to retry getting a rating
+    'RATING_TIMEOUT': 10,     # How long to wait for rating input (seconds)
+    'ADDITIONAL_TIMEOUT': 10, # How long to wait for additional questions input
 }
 
 LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = 'callbacks:dashboard'
 LOGOUT_REDIRECT_URL = 'users:login'
+
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-stale-calls': {
+        'task': 'callbacks.tasks.cleanup_stale_calls',
+        'schedule': 60.0,  # Run every minute
+    },
+}
