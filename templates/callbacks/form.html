@@ -2,162 +2,396 @@
 
 {% block title %}{{ title }} - Emergency Callback System{% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-radius: 16px;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 1.5rem;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+
+    .input-group-custom {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+
+    .input-group-custom .form-control,
+    .input-group-custom .form-select {
+        padding-left: 3rem;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .input-group-custom .form-control:focus,
+    .input-group-custom .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+        font-size: 1.1rem;
+    }
+
+    .stats-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        height: 100%;
+        border: 1px solid #dee2e6;
+    }
+
+    .tips-card {
+        background: linear-gradient(135deg, #e7f3ff 0%, #cfe7ff 100%);
+        border: 1px solid #b3d9ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .validation-feedback {
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .phone-preview {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(25, 135, 84, 0.3);
+    }
+
+    .process-info {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #ffdf9a;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .form-card {
+            margin: 0 0.5rem;
+        }
+
+        .input-group-custom .form-control,
+        .input-group-custom .form-select {
+            padding-left: 2.5rem;
+        }
+
+        .input-icon {
+            left: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2"><i class="bi bi-plus-circle"></i> {{ title }}</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">
+            <i class="bi bi-plus-circle text-success"></i> {{ title }}
+        </h1>
+        <p class="text-muted mb-0">Create a new emergency callback request for patient feedback</p>
+    </div>
+    <div class="btn-toolbar">
         <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to List
         </a>
     </div>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-telephone-plus"></i> Callback Request Details</h5>
+<div class="row g-4">
+    <!-- Main Form -->
+    <div class="col-lg-8">
+        <div class="card form-card">
+            <div class="form-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-telephone-plus me-2"></i>Callback Request Details
+                </h5>
+                <p class="mb-0 mt-2 opacity-75">Fill in the patient's contact information and select the emergency team</p>
             </div>
-            <div class="card-body">
-                <form method="post">
+
+            <div class="card-body p-4">
+                <form method="post" id="callbackForm" novalidate>
                     {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.phone_number.id_for_label }}" class="form-label">
-                            <i class="bi bi-telephone"></i> Phone Number <span class="text-danger">*</span>
-                        </label>
-                        {{ form.phone_number }}
-                        {% if form.phone_number.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.phone_number.errors %}
-                                    {{ error }}
-                                {% endfor %}
+
+                    <!-- Phone Number Section -->
+                    <div class="form-section">
+                        <h6 class="mb-3">
+                            <i class="bi bi-telephone text-primary me-2"></i>Contact Information
+                        </h6>
+
+                        <div class="input-group-custom">
+                            <i class="bi bi-telephone input-icon"></i>
+                            {{ form.phone_number }}
+                            {% if form.phone_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.phone_number.errors %}
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle text-primary"></i>
+                                {{ form.phone_number.help_text }}
                             </div>
-                        {% endif %}
-                        <div class="form-text">
-                            <i class="bi bi-info-circle"></i> 
-                            Enter phone number in format: 998901234567 (with country code)
+                        </div>
+
+                        <!-- Phone Preview -->
+                        <div class="phone-preview-container" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="bi bi-eye me-2"></i>
+                                <strong>Preview:</strong> <span class="phone-preview" id="phonePreview"></span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.team.id_for_label }}" class="form-label">
-                            <i class="bi bi-people"></i> Emergency Team <span class="text-danger">*</span>
-                        </label>
-                        {{ form.team }}
-                        {% if form.team.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.team.errors %}
-                                    {{ error }}
-                                {% endfor %}
+
+                    <!-- Team Selection Section -->
+                    <div class="form-section">
+                        <h6 class="mb-3">
+                            <i class="bi bi-people text-primary me-2"></i>Emergency Team
+                        </h6>
+
+                        <div class="input-group-custom">
+                            <i class="bi bi-people input-icon"></i>
+                            {{ form.team }}
+                            {% if form.team.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.team.errors %}
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle text-primary"></i>
+                                {{ form.team.help_text }}
                             </div>
-                        {% endif %}
-                        <div class="form-text">
-                            <i class="bi bi-info-circle"></i> 
-                            Select the emergency team that attended to this patient
                         </div>
                     </div>
-                    
-                    <!-- Information Box -->
-                    <div class="alert alert-info">
-                        <h6><i class="bi bi-info-circle"></i> What happens next?</h6>
-                        <ul class="mb-0">
-                            <li>The system will automatically call the provided number</li>
-                            <li>Patient will be asked to rate the service (1-5 stars)</li>
-                            <li>Option to transfer to operator for additional questions</li>
-                            <li>All ratings are stored for quality analysis</li>
-                        </ul>
+
+                    <!-- Process Information -->
+                    <div class="process-info">
+                        <h6 class="mb-3">
+                            <i class="bi bi-info-circle text-warning me-2"></i>What happens next?
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start">
+                                    <div class="badge bg-primary me-3 mt-1">1</div>
+                                    <div>
+                                        <strong>Automatic Call</strong>
+                                        <p class="mb-0 small text-muted">System calls the patient immediately</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start">
+                                    <div class="badge bg-primary me-3 mt-1">2</div>
+                                    <div>
+                                        <strong>Service Rating</strong>
+                                        <p class="mb-0 small text-muted">Patient rates service quality (1-5 stars)</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start">
+                                    <div class="badge bg-primary me-3 mt-1">3</div>
+                                    <div>
+                                        <strong>Additional Support</strong>
+                                        <p class="mb-0 small text-muted">Option to transfer to operator</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start">
+                                    <div class="badge bg-primary me-3 mt-1">4</div>
+                                    <div>
+                                        <strong>Quality Analysis</strong>
+                                        <p class="mb-0 small text-muted">Rating stored for service improvement</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
                         <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i> Cancel
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-telephone-outbound"></i> Create Callback Request
+                        <button type="submit" class="btn btn-success btn-create">
+                            <i class="bi bi-telephone-outbound me-2"></i>Create Callback Request
                         </button>
                     </div>
                 </form>
             </div>
         </div>
-        
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
         <!-- Quick Stats -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h6><i class="bi bi-bar-chart"></i> Quick Stats</h6>
+        <div class="card mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-bar-chart text-primary"></i> Today's Activity
+                </h6>
             </div>
             <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-4">
-                        <h5 class="text-primary mb-0">{{ today_calls|default:0 }}</h5>
-                        <small class="text-muted">Calls Today</small>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-primary mb-1">{{ today_calls|default:0 }}</div>
+                            <div class="small text-muted">Calls Created</div>
+                        </div>
                     </div>
-                    <div class="col-4">
-                        <h5 class="text-success mb-0">{{ today_completed|default:0 }}</h5>
-                        <small class="text-muted">Completed</small>
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-success mb-1">{{ today_completed|default:0 }}</div>
+                            <div class="small text-muted">Completed</div>
+                        </div>
                     </div>
-                    <div class="col-4">
-                        <h5 class="text-warning mb-0">{{ today_ratings|default:0 }}</h5>
-                        <small class="text-muted">Ratings</small>
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-warning mb-1">{{ today_ratings|default:0 }}</div>
+                            <div class="small text-muted">Ratings</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-info mb-1">{{ today_success_rate|default:0 }}%</div>
+                            <div class="small text-muted">Success Rate</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Side Panel with Tips -->
-    <div class="col-md-4">
+
+        <!-- Tips and Guidelines -->
+        <div class="tips-card mb-4">
+            <h6 class="mb-3">
+                <i class="bi bi-lightbulb text-warning me-2"></i>Best Practices
+            </h6>
+
+            <div class="mb-3">
+                <h6 class="h6">
+                    <i class="bi bi-telephone text-primary me-2"></i>Phone Numbers
+                </h6>
+                <ul class="small mb-0 list-unstyled">
+                    <li class="mb-1">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Include country code (998 for Uzbekistan)
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Verify number before submitting
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Mobile numbers work best
+                    </li>
+                </ul>
+            </div>
+
+            <div class="mb-3">
+                <h6 class="h6">
+                    <i class="bi bi-clock text-primary me-2"></i>Optimal Call Times
+                </h6>
+                <ul class="small mb-0 list-unstyled">
+                    <li class="mb-1">
+                        <i class="bi bi-sun text-warning me-2"></i>
+                        Weekdays: 9 AM - 6 PM
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-moon text-secondary me-2"></i>
+                        Avoid early morning/late evening
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-heart-pulse text-danger me-2"></i>
+                        Consider patient recovery time
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <h6 class="h6">
+                    <i class="bi bi-star text-warning me-2"></i>Rating System
+                </h6>
+                <ul class="small mb-0 list-unstyled">
+                    <li class="mb-1">⭐ Very Poor Service</li>
+                    <li class="mb-1">⭐⭐ Poor Service</li>
+                    <li class="mb-1">⭐⭐⭐ Average Service</li>
+                    <li class="mb-1">⭐⭐⭐⭐ Good Service</li>
+                    <li class="mb-1">⭐⭐⭐⭐⭐ Excellent Service</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Support Card -->
         <div class="card">
             <div class="card-header bg-light">
-                <h6><i class="bi bi-lightbulb"></i> Tips for Success</h6>
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-question-circle text-info me-2"></i>Need Help?
+                </h6>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <h6><i class="bi bi-telephone"></i> Phone Numbers</h6>
-                    <ul class="small mb-0">
-                        <li>Include country code (998 for Uzbekistan)</li>
-                        <li>Verify number before submitting</li>
-                        <li>Mobile numbers work best</li>
-                    </ul>
-                </div>
-                
-                <div class="mb-3">
-                    <h6><i class="bi bi-clock"></i> Best Call Times</h6>
-                    <ul class="small mb-0">
-                        <li>Weekdays: 9 AM - 6 PM</li>
-                        <li>Avoid early morning/late evening</li>
-                        <li>Consider patient recovery time</li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h6><i class="bi bi-star"></i> Rating System</h6>
-                    <ul class="small mb-0">
-                        <li>1 = Very Poor</li>
-                        <li>2 = Poor</li>
-                        <li>3 = Average</li>
-                        <li>4 = Good</li>
-                        <li>5 = Excellent</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mt-3">
-            <div class="card-header bg-light">
-                <h6><i class="bi bi-question-circle"></i> Need Help?</h6>
-            </div>
-            <div class="card-body">
-                <p class="small">If you encounter any issues:</p>
-                <ul class="small">
-                    <li>Check phone number format</li>
-                    <li>Ensure team is selected</li>
-                    <li>Contact system administrator</li>
+                <p class="small mb-3">If you encounter any issues:</p>
+                <ul class="small list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check text-success me-2"></i>
+                        Verify phone number format
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check text-success me-2"></i>
+                        Ensure emergency team is selected
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check text-success me-2"></i>
+                        Contact system administrator
+                    </li>
                 </ul>
                 {% if user.is_staff %}
-                <a href="/admin/" class="btn btn-sm btn-outline-info">
-                    <i class="bi bi-gear"></i> Admin Panel
-                </a>
+                <div class="d-grid">
+                    <a href="/admin/callbacks/callbackrequest/" class="btn btn-sm btn-outline-info" target="_blank">
+                        <i class="bi bi-gear"></i> Admin Panel
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -165,44 +399,178 @@
 </div>
 
 <script>
-// Phone number formatting
-document.getElementById('id_phone_number').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-    
-    // Auto-add 998 prefix if needed
-    if (value.length > 0 && !value.startsWith('998')) {
+// Enhanced phone number formatting and validation
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.getElementById('id_phone_number');
+    const phonePreviewContainer = document.querySelector('.phone-preview-container');
+    const phonePreview = document.getElementById('phonePreview');
+    const form = document.getElementById('callbackForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Phone number formatting and preview
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^\d+]/g, ''); // Keep only digits and +
+
+        // Auto-format for Uzbekistan numbers
         if (value.startsWith('9') && value.length === 9) {
             value = '998' + value;
-        } else if (value.length === 9) {
-            value = '998' + value;
+        } else if (value.startsWith('98') && value.length === 11) {
+            value = '9' + value;
         }
+
+        e.target.value = value;
+
+        // Show preview if valid length
+        if (value.length >= 9) {
+            phonePreview.textContent = formatPhoneDisplay(value);
+            phonePreviewContainer.style.display = 'block';
+        } else {
+            phonePreviewContainer.style.display = 'none';
+        }
+
+        // Real-time validation feedback
+        validatePhoneNumber(value);
+    });
+
+    // Real-time phone validation
+    function validatePhoneNumber(phone) {
+        const feedback = phoneInput.parentNode.querySelector('.invalid-feedback');
+        let isValid = true;
+        let message = '';
+
+        if (phone.length < 9) {
+            isValid = false;
+            message = 'Phone number too short (minimum 9 digits)';
+        } else if (phone.length > 15) {
+            isValid = false;
+            message = 'Phone number too long (maximum 15 digits)';
+        } else if (phone.replace(/[^\d]/g, '').length < 9) {
+            isValid = false;
+            message = 'Enter a valid phone number';
+        }
+
+        // Update visual feedback
+        if (isValid) {
+            phoneInput.classList.remove('is-invalid');
+            phoneInput.classList.add('is-valid');
+            if (feedback) feedback.style.display = 'none';
+        } else {
+            phoneInput.classList.remove('is-valid');
+            phoneInput.classList.add('is-invalid');
+            if (feedback) {
+                feedback.textContent = message;
+                feedback.style.display = 'block';
+            }
+        }
+
+        return isValid;
     }
-    
-    e.target.value = value;
+
+    // Format phone number for display
+    function formatPhoneDisplay(phone) {
+        if (phone.startsWith('998') && phone.length === 12) {
+            return `+998 (${phone.substr(3, 2)}) ${phone.substr(5, 3)}-${phone.substr(8, 2)}-${phone.substr(10, 2)}`;
+        }
+        return phone;
+    }
+
+    // Enhanced form validation
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const phoneNumber = phoneInput.value.trim();
+        const team = document.getElementById('id_team').value;
+        let isValid = true;
+
+        // Validate phone number
+        if (!validatePhoneNumber(phoneNumber)) {
+            isValid = false;
+        }
+
+        // Validate team selection
+        if (!team) {
+            const teamSelect = document.getElementById('id_team');
+            teamSelect.classList.add('is-invalid');
+            showToast('Please select an emergency team', 'error');
+            isValid = false;
+        } else {
+            document.getElementById('id_team').classList.remove('is-invalid');
+        }
+
+        if (!isValid) {
+            return;
+        }
+
+        // Show confirmation dialog
+        const teamName = document.getElementById('id_team').selectedOptions[0].text;
+        const confirmMsg = `Create callback request for:\n\nPhone: ${formatPhoneDisplay(phoneNumber)}\nTeam: ${teamName}\n\nThe system will immediately call this number. Continue?`;
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        // Show loading state
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Creating Request...';
+        submitBtn.disabled = true;
+
+        // Add loading overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+        overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+        overlay.style.zIndex = '9999';
+        overlay.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                <h5>Creating Callback Request...</h5>
+                <p class="text-muted">Please wait while we process your request</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        // Simulate processing time, then submit
+        setTimeout(() => {
+            form.submit();
+        }, 1500);
+    });
+
+    // Team selection enhancement
+    document.getElementById('id_team').addEventListener('change', function() {
+        this.classList.remove('is-invalid');
+        if (this.value) {
+            this.classList.add('is-valid');
+        } else {
+            this.classList.remove('is-valid');
+        }
+    });
+
+    // Auto-focus first field
+    phoneInput.focus();
 });
 
-// Form validation
-document.querySelector('form').addEventListener('submit', function(e) {
-    const phoneNumber = document.getElementById('id_phone_number').value;
-    const team = document.getElementById('id_team').value;
-    
-    if (!phoneNumber || phoneNumber.length < 12) {
-        alert('Please enter a valid phone number with country code (e.g., 998901234567)');
-        e.preventDefault();
-        return;
-    }
-    
-    if (!team) {
-        alert('Please select an emergency team');
-        e.preventDefault();
-        return;
-    }
-    
-    // Confirm submission
-    const confirmMsg = `Create callback request for ${phoneNumber} with team ${document.getElementById('id_team').selectedOptions[0].text}?`;
-    if (!confirm(confirmMsg)) {
-        e.preventDefault();
-    }
-});
+// Utility function for showing toasts
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed top-0 end-0 m-3 fade show`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'error' ? 'exclamation-triangle' : 'info-circle'}-fill me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => document.body.removeChild(toast), 150);
+    }, 4000);
+}
 </script>
 {% endblock %}

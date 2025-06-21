@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ team.name }} - Team Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .team-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        transition: transform 0.2s ease;
+        height: 100%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .rating-distribution {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .rating-bar {
+        height: 10px;
+        border-radius: 5px;
+        overflow: hidden;
+        background-color: #e9ecef;
+        margin: 0.5rem 0;
+    }
+
+    .rating-bar .progress-bar {
+        transition: width 0.6s ease;
+        border-radius: 5px;
+    }
+
+    .activity-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+
+    .callback-item {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+
+    .callback-item:hover {
+        background-color: #f8f9fa;
+        border-color: #0d6efd;
+    }
+
+    .team-badge {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+    }
+
+    .quick-actions {
+        background: linear-gradient(135deg, #e7f3ff 0%, #cfe7ff 100%);
+        border: 1px solid #b3d9ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">
+            <i class="bi bi-people text-primary"></i> Team Details
+        </h1>
+        <p class="text-muted mb-0">Comprehensive information and statistics</p>
+    </div>
+    <div class="btn-toolbar">
+        <div class="btn-group me-2">
+            <a href="{% url 'teams:edit' team.pk %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Edit Team
+            </a>
+        </div>
+        <div class="btn-group me-2">
+            <a href="{% url 'teams:list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Teams
+            </a>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Team Header -->
+<div class="card mb-4" style="border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-radius: 16px;">
+    <div class="team-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2 class="mb-2">{{ team.name }}</h2>
+                <p class="mb-3 opacity-75">{{ team.description|default:"No description provided" }}</p>
+                <div class="d-flex align-items-center">
+                    <span class="badge team-badge
+                        {% if team.is_active %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {% if team.is_active %}
+                            <i class="bi bi-check-circle me-1"></i> Active
+                        {% else %}
+                            <i class="bi bi-pause-circle me-1"></i> Inactive
+                        {% endif %}
+                    </span>
+                    <span class="ms-3 opacity-75">
+                        <i class="bi bi-hash"></i> ID: {{ team.id }}
+                    </span>
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="mb-2">
+                    <small class="opacity-75">Created</small>
+                    <div>{{ team.created_at|date:"M d, Y" }}</div>
+                </div>
+                <div>
+                    <small class="opacity-75">By</small>
+                    <div>{{ team.created_by.username }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Statistics -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card text-center">
+            <div class="stat-number text-primary">{{ total_callbacks }}</div>
+            <div class="stat-label">Total Callbacks</div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card text-center">
+            <div class="stat-number text-success">{{ completed_callbacks }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card text-center">
+            <div class="stat-number text-warning">{{ total_ratings }}</div>
+            <div class="stat-label">Ratings Received</div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card text-center">
+            <div class="stat-number text-info">{{ success_rate }}%</div>
+            <div class="stat-label">Success Rate</div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Analytics -->
+<div class="row g-4 mb-4">
+    <!-- Rating Analysis -->
+    <div class="col-lg-8">
+        <div class="activity-card">
+            <h5 class="mb-4">
+                <i class="bi bi-star text-warning me-2"></i>Rating Analysis
+            </h5>
+
+            {% if total_ratings > 0 %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="text-center mb-4">
+                        <div class="display-4 text-warning">{{ avg_rating }}</div>
+                        <div class="text-muted">Average Rating</div>
+                        <div class="small text-muted">{{ good_rating_percentage }}% rated 4+ stars</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="mb-3">Rating Distribution</h6>
+                    {% for dist in rating_distribution %}
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width: 80px;">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= dist.rating %}
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                {% else %}
+                                    <i class="bi bi-star text-muted"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="flex-grow-1 mx-2">
+                            <div class="rating-bar">
+                                <div class="progress-bar
+                                    {% if dist.rating >= 4 %}bg-success
+                                    {% elif dist.rating == 3 %}bg-warning
+                                    {% else %}bg-danger
+                                    {% endif %}"
+                                    style="width: {{ dist.percentage }}%"></div>
+                            </div>
+                        </div>
+                        <div style="width: 70px; text-align: right;">
+                            <span class="badge bg-light text-dark">{{ dist.count }} ({{ dist.percentage }}%)</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-star display-4 text-muted"></i>
+                <p class="text-muted mt-3">No ratings received yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="col-lg-4">
+        <div class="activity-card">
+            <h5 class="mb-4">
+                <i class="bi bi-calendar text-primary me-2"></i>Activity Summary
+            </h5>
+
+            <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                <div>
+                    <div class="fw-bold">Today</div>
+                    <small class="text-muted">Callbacks</small>
+                </div>
+                <div class="h4 text-primary mb-0">{{ today_callbacks }}</div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                <div>
+                    <div class="fw-bold">This Week</div>
+                    <small class="text-muted">Callbacks</small>
+                </div>
+                <div class="h4 text-info mb-0">{{ week_callbacks }}</div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                <div>
+                    <div class="fw-bold">This Month</div>
+                    <small class="text-muted">Callbacks</small>
+                </div>
+                <div class="h4 text-success mb-0">{{ month_callbacks }}</div>
+            </div>
+
+            {% if pending_callbacks > 0 %}
+            <div class="alert alert-warning">
+                <i class="bi bi-clock me-2"></i>
+                <strong>{{ pending_callbacks }}</strong> callback{{ pending_callbacks|pluralize }} currently pending
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="activity-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history text-primary me-2"></i>Recent Callbacks
+                </h5>
+                <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-sm btn-outline-primary">
+                    View All <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            {% if recent_callbacks %}
+            {% for callback in recent_callbacks %}
+            <div class="callback-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="fw-semibold">{{ callback.phone_number }}</div>
+                        <small class="text-muted">
+                            <i class="bi bi-person me-1"></i>{{ callback.requested_by.username }}
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge
+                            {% if callback.status == 'completed' %}bg-success
+                            {% elif callback.status == 'failed' %}bg-danger
+                            {% elif callback.status == 'pending' %}bg-warning
+                            {% else %}bg-secondary
+                            {% endif %}">
+                            {{ callback.get_status_display }}
+                        </span>
+                        <div class="small text-muted mt-1">{{ callback.created_at|timesince }} ago</div>
+                    </div>
+                </div>
+
+                {% if callback.has_rating %}
+                <div class="mt-2">
+                    <small class="text-muted">Rating: </small>
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= callback.rating.rating %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                        {% else %}
+                            <i class="bi bi-star text-muted"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="small text-muted">({{ callback.rating.rating }}/5)</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-telephone-x display-4 text-muted"></i>
+                <p class="text-muted mt-3">No callbacks yet</p>
+                <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create First Callback
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="quick-actions mb-4">
+            <h6 class="mb-3">
+                <i class="bi bi-lightning text-warning me-2"></i>Quick Actions
+            </h6>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'callbacks:create' %}" class="btn btn-success">
+                    <i class="bi bi-telephone-plus me-2"></i>New Callback for Team
+                </a>
+
+                <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-outline-primary">
+                    <i class="bi bi-list me-2"></i>View All Callbacks
+                </a>
+
+                <a href="{% url 'callbacks:ratings' %}?team={{ team.id }}" class="btn btn-outline-warning">
+                    <i class="bi bi-star me-2"></i>View Team Ratings
+                </a>
+
+                <button class="btn btn-outline-info" onclick="exportTeamData()">
+                    <i class="bi bi-download me-2"></i>Export Team Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Team Management -->
+        <div class="activity-card">
+            <h6 class="mb-3">
+                <i class="bi bi-gear text-secondary me-2"></i>Team Management
+            </h6>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil me-2"></i>Edit Team
+                </a>
+
+                {% if team.is_active %}
+                <a href="{% url 'teams:delete' team.pk %}" class="btn btn-outline-warning">
+                    <i class="bi bi-pause-circle me-2"></i>Deactivate Team
+                </a>
+                {% else %}
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="activate">
+                    <button type="submit" class="btn btn-outline-success w-100">
+                        <i class="bi bi-play-circle me-2"></i>Reactivate Team
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if user.is_staff %}
+                <a href="/admin/teams/team/{{ team.id }}/change/"
+                   class="btn btn-outline-secondary" target="_blank">
+                    <i class="bi bi-gear me-2"></i>Admin View
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Export team data
+function exportTeamData() {
+    const teamData = {
+        id: {{ team.id }},
+        name: "{{ team.name|escapejs }}",
+        description: "{{ team.description|escapejs }}",
+        is_active: {{ team.is_active|yesno:"true,false" }},
+        created_at: "{{ team.created_at|date:'c' }}",
+        statistics: {
+            total_callbacks: {{ total_callbacks }},
+            completed_callbacks: {{ completed_callbacks }},
+            failed_callbacks: {{ failed_callbacks }},
+            pending_callbacks: {{ pending_callbacks }},
+            total_ratings: {{ total_ratings }},
+            avg_rating: {{ avg_rating }},
+            success_rate: {{ success_rate }},
+            good_rating_percentage: {{ good_rating_percentage }}
+        }
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(teamData, null, 2));
+    const downloadLink = document.createElement('a');
+    downloadLink.href = dataStr;
+    downloadLink.download = 'team_{{ team.id }}_data.json';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    showToast('Team data exported successfully!', 'success');
+}
+
+// Animate progress bars on load
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBars = document.querySelectorAll('.rating-bar .progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 100);
+    });
+});
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3 fade show`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}-fill me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 150);
+    }, 4000);
+}
+</script>
+{% endblock %}

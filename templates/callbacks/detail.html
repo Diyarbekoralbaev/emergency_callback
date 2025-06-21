@@ -1,0 +1,701 @@
+{% extends 'base.html' %}
+
+{% block title %}Callback Details - Emergency Callback System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .detail-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+        color: white;
+        padding: 2rem;
+    }
+
+    .status-badge-large {
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .info-item {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #0d6efd;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 12px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #0d6efd, #6c757d);
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 2rem;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -2.5rem;
+        top: 1.5rem;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .rating-display {
+        background: linear-gradient(135deg, #fff8e1 0%, #fff3c4 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        border: 2px solid #ffc107;
+    }
+
+    .rating-stars-large {
+        font-size: 2.5rem;
+        color: #ffc107;
+        margin: 1rem 0;
+    }
+
+    .action-card {
+        background: linear-gradient(135deg, #e7f3ff 0%, #cfe7ff 100%);
+        border: 1px solid #b3d9ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .copy-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 4px;
+    }
+
+    .error-display {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
+        border: 2px solid #dc3545;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .success-indicator {
+        background: linear-gradient(135deg, #d1e7dd 0%, #a3cfbb 100%);
+        border: 2px solid #198754;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .phone-display {
+        font-family: 'Courier New', monospace;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #0d6efd;
+        background: #f8f9fa;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    @media (max-width: 768px) {
+        .detail-header {
+            padding: 1.5rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .timeline {
+            padding-left: 1.5rem;
+        }
+
+        .timeline-marker {
+            left: -2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">
+            <i class="bi bi-eye text-primary"></i> Callback Details
+        </h1>
+        <p class="text-muted mb-0">Detailed information about emergency callback request</p>
+    </div>
+    <div class="btn-toolbar">
+        <div class="btn-group me-2">
+            <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Print
+            </button>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Details Column -->
+    <div class="col-lg-8">
+        <!-- Header Card -->
+        <div class="card detail-card mb-4">
+            <div class="detail-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h3 class="mb-2">
+                            <i class="bi bi-telephone-fill me-2"></i>Callback Request
+                        </h3>
+                        <div class="phone-display">{{ callback.phone_number }}</div>
+                    </div>
+                    <div class="text-end">
+                        {% if callback.status == 'completed' %}
+                            <span class="status-badge-large bg-success">
+                                <i class="bi bi-check-circle me-2"></i>{{ callback.get_status_display }}
+                            </span>
+                        {% elif callback.status == 'failed' %}
+                            <span class="status-badge-large bg-danger">
+                                <i class="bi bi-x-circle me-2"></i>{{ callback.get_status_display }}
+                            </span>
+                        {% elif callback.status == 'pending' %}
+                            <span class="status-badge-large bg-warning text-dark">
+                                <i class="bi bi-clock me-2"></i>{{ callback.get_status_display }}
+                            </span>
+                        {% elif callback.status == 'dialing' %}
+                            <span class="status-badge-large bg-primary">
+                                <i class="bi bi-telephone-outbound me-2"></i>{{ callback.get_status_display }}
+                            </span>
+                        {% elif callback.status == 'answered' %}
+                            <span class="status-badge-large bg-success">
+                                <i class="bi bi-telephone-fill me-2"></i>{{ callback.get_status_display }}
+                            </span>
+                        {% else %}
+                            <span class="status-badge-large bg-secondary">{{ callback.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Quick Info Grid -->
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Emergency Team</div>
+                        <div class="info-value">
+                            <span class="badge bg-info me-2">{{ callback.team.name }}</span>
+                            <small class="text-muted">(ID: {{ callback.team.id }})</small>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-label">Requested By</div>
+                        <div class="info-value">
+                            <i class="bi bi-person-circle text-primary me-2"></i>
+                            {{ callback.requested_by.username }}
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-label">Created</div>
+                        <div class="info-value">{{ callback.created_at|date:"M d, Y H:i:s" }}</div>
+                    </div>
+
+                    {% if callback.call_id %}
+                    <div class="info-item">
+                        <div class="info-label">Call ID</div>
+                        <div class="info-value d-flex align-items-center">
+                            <span class="font-monospace me-2">{{ callback.call_id|slice:":8" }}...</span>
+                            <button class="btn btn-sm btn-outline-secondary copy-btn"
+                                    onclick="copyToClipboard('{{ callback.call_id }}')"
+                                    title="Copy full ID">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Call Details -->
+        <div class="card detail-card mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Technical Details
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="fw-semibold text-muted">Unique ID:</td>
+                                <td>
+                                    {% if callback.uniqueid %}
+                                        <span class="font-monospace">{{ callback.uniqueid }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Not assigned</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Channel:</td>
+                                <td>
+                                    {% if callback.channel %}
+                                        <span class="font-monospace">{{ callback.channel }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Not assigned</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Duration:</td>
+                                <td>
+                                    {% if callback.call_duration %}
+                                        <span class="badge bg-info">{{ callback.call_duration }}s</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="fw-semibold text-muted">Transferred:</td>
+                                <td>
+                                    {% if callback.transferred %}
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-arrow-right-square"></i> Yes
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Additional Questions:</td>
+                                <td>
+                                    {% if callback.additional_questions is True %}
+                                        <span class="badge bg-success">Requested</span>
+                                    {% elif callback.additional_questions is False %}
+                                        <span class="badge bg-secondary">Declined</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">Not asked</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Has Rating:</td>
+                                <td>
+                                    {% if callback.has_rating %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-star-fill"></i> Yes
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card detail-card mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history text-primary me-2"></i>Call Timeline
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="bi bi-plus-circle text-primary me-2"></i>Request Created
+                            </h6>
+                            <p class="mb-1 fw-semibold">{{ callback.created_at|date:"M d, Y H:i:s" }}</p>
+                            <small class="text-muted">
+                                <i class="bi bi-person me-1"></i>by {{ callback.requested_by.username }}
+                            </small>
+                        </div>
+                    </div>
+
+                    {% if callback.call_started_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="bi bi-telephone-outbound text-warning me-2"></i>Call Started
+                            </h6>
+                            <p class="mb-1 fw-semibold">{{ callback.call_started_at|date:"M d, Y H:i:s" }}</p>
+                            <small class="text-muted">
+                                <i class="bi bi-robot me-1"></i>System initiated call
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if callback.call_ended_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if callback.status == 'completed' %}bg-success{% else %}bg-danger{% endif %}"></div>
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="bi bi-telephone-x {% if callback.status == 'completed' %}text-success{% else %}text-danger{% endif %} me-2"></i>Call Ended
+                            </h6>
+                            <p class="mb-1 fw-semibold">{{ callback.call_ended_at|date:"M d, Y H:i:s" }}</p>
+                            {% if callback.call_started_at and callback.call_ended_at %}
+                                {% with duration=callback.call_ended_at|timesince:callback.call_started_at %}
+                                <small class="text-muted">
+                                    <i class="bi bi-stopwatch me-1"></i>Duration: {{ duration }}
+                                </small>
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Information -->
+        {% if callback.error_message %}
+        <div class="card detail-card mb-4">
+            <div class="card-body p-0">
+                <div class="error-display">
+                    <h6 class="mb-3">
+                        <i class="bi bi-exclamation-triangle text-danger me-2"></i>Error Information
+                    </h6>
+                    <div class="alert alert-danger mb-3">
+                        <strong>Error Details:</strong><br>
+                        {{ callback.error_message }}
+                    </div>
+                    {% if callback.status == 'failed' and user == callback.requested_by %}
+                    <div class="text-center">
+                        <button class="btn btn-warning" onclick="retryCall()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Retry Call
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Rating Display -->
+        {% if rating %}
+        <div class="card detail-card mb-4">
+            <div class="card-body p-0">
+                <div class="rating-display">
+                    <h6 class="mb-3">
+                        <i class="bi bi-star-fill text-warning me-2"></i>Patient Rating
+                    </h6>
+                    <div class="rating-stars-large">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= rating.rating %}
+                                <i class="bi bi-star-fill"></i>
+                            {% else %}
+                                <i class="bi bi-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <h3 class="text-warning mb-2">{{ rating.rating }}/5</h3>
+                    <p class="mb-2 fw-semibold">{{ rating.rating_text }}</p>
+                    <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i>Received: {{ rating.timestamp|date:"M d, H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% elif callback.status == 'completed' %}
+        <div class="card detail-card mb-4">
+            <div class="card-body text-center">
+                <i class="bi bi-hourglass-split display-4 text-muted mb-3"></i>
+                <h6>Rating Status</h6>
+                <p class="text-muted mb-0">Call completed but no rating received yet</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="card detail-card mb-4">
+            <div class="card-body text-center">
+                <i class="bi bi-clock display-4 text-muted mb-3"></i>
+                <h6>Rating Status</h6>
+                <p class="text-muted mb-0">
+                    {% if callback.status == 'pending' or callback.status == 'dialing' %}
+                        Waiting for call to complete
+                    {% elif callback.status == 'failed' %}
+                        Call failed - no rating possible
+                    {% else %}
+                        {{ callback.get_status_display }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Success Indicator -->
+        {% if callback.is_successful %}
+        <div class="success-indicator mb-4">
+            <h6 class="mb-2">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>Successful Call
+            </h6>
+            <p class="mb-0 small">This callback was successfully completed or transferred</p>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="card detail-card mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-gear text-primary me-2"></i>Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if callback.status == 'failed' and user == callback.requested_by %}
+                    <button class="btn btn-warning" onclick="retryCall()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Retry Call
+                    </button>
+                    {% endif %}
+
+                    <button class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="bi bi-printer me-2"></i>Print Details
+                    </button>
+
+                    <button class="btn btn-outline-info" onclick="exportDetails()">
+                        <i class="bi bi-download me-2"></i>Export Data
+                    </button>
+
+                    {% if user.is_staff %}
+                    <a href="/admin/callbacks/callbackrequest/{{ callback.pk }}/change/"
+                       class="btn btn-outline-secondary" target="_blank">
+                        <i class="bi bi-gear me-2"></i>Admin View
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Information -->
+        {% if callback.team.description %}
+        <div class="action-card">
+            <h6 class="mb-2">
+                <i class="bi bi-info-circle text-info me-2"></i>Team Information
+            </h6>
+            <p class="small mb-2"><strong>{{ callback.team.name }}</strong></p>
+            <p class="small text-muted mb-0">{{ callback.team.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Copy to clipboard functionality
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        showToast('Copied to clipboard!', 'success');
+    }).catch(function() {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Copied to clipboard!', 'success');
+    });
+}
+
+// Retry call functionality
+function retryCall() {
+    if (confirm('Are you sure you want to retry this call? This will create a new callback request with the same details.')) {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        btn.disabled = true;
+
+        // In a real implementation, you would make an AJAX call to retry the callback
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            showToast('Retry functionality would be implemented here. This would create a new callback request.', 'info');
+        }, 2000);
+    }
+}
+
+// Export details functionality
+function exportDetails() {
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Exporting...';
+    btn.disabled = true;
+
+    // In a real implementation, you would generate and download the export
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        showToast('Export functionality would be implemented here', 'info');
+    }, 1500);
+}
+
+// Auto refresh for active calls
+{% if callback.status == 'pending' or callback.status == 'dialing' or callback.status == 'answered' %}
+let refreshInterval = setInterval(function() {
+    // Add visual indicator that page is refreshing
+    const refreshBtn = document.querySelector('button[onclick="location.reload()"]');
+    if (refreshBtn) {
+        const originalHTML = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Auto-refreshing...';
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    } else {
+        location.reload();
+    }
+}, 15000);
+
+// Stop auto-refresh when page becomes hidden
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        clearInterval(refreshInterval);
+    } else {
+        // Restart auto-refresh when page becomes visible again
+        refreshInterval = setInterval(function() {
+            location.reload();
+        }, 15000);
+    }
+});
+{% endif %}
+
+// Enhanced print functionality
+window.addEventListener('beforeprint', function() {
+    // Hide non-essential elements when printing
+    const elementsToHide = document.querySelectorAll('.btn-toolbar, .card-footer, button');
+    elementsToHide.forEach(el => el.style.display = 'none');
+});
+
+window.addEventListener('afterprint', function() {
+    // Restore hidden elements after printing
+    const elementsToShow = document.querySelectorAll('.btn-toolbar, .card-footer, button');
+    elementsToShow.forEach(el => el.style.display = '');
+});
+
+// Show loading indicator for slow network
+let slowNetworkTimer = setTimeout(() => {
+    if (!document.readyState === 'complete') {
+        showToast('Loading details...', 'info');
+    }
+}, 2000);
+
+window.addEventListener('load', () => {
+    clearTimeout(slowNetworkTimer);
+});
+
+// Utility function for showing toasts
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed top-0 end-0 m-3 fade show`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}-fill me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 150);
+    }, 4000);
+}
+</script>
+
+<style media="print">
+    .btn-toolbar, .card-footer, button, .action-card {
+        display: none !important;
+    }
+
+    .detail-card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .timeline::before {
+        background: #6c757d !important;
+    }
+
+    .timeline-marker {
+        box-shadow: none !important;
+    }
+
+    @page {
+        margin: 1in;
+    }
+</style>
+{% endblock %}

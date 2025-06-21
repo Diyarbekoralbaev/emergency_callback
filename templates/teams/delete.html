@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Team - {{ team.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-warning {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
+        border: 2px solid #dc3545;
+        border-radius: 16px;
+        padding: 2rem;
+    }
+
+    .impact-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        margin-bottom: 1rem;
+    }
+
+    .impact-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .action-card {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 2px solid #ffc107;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .danger-zone {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
+        border: 2px solid #dc3545;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .team-info {
+        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">
+            <i class="bi bi-exclamation-triangle text-danger"></i> Team Management
+        </h1>
+        <p class="text-muted mb-0">Deactivate or delete emergency team</p>
+    </div>
+    <div class="btn-toolbar">
+        <a href="{% url 'teams:detail' team.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Team
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Team Information -->
+        <div class="card mb-4" style="border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-radius: 16px;">
+            <div class="team-info">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="bi bi-people-fill display-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-1">{{ team.name }}</h3>
+                        <p class="mb-2 opacity-75">{{ team.description|default:"No description provided" }}</p>
+                        <div class="d-flex align-items-center">
+                            <span class="badge {% if team.is_active %}bg-success{% else %}bg-warning text-dark{% endif %} me-3">
+                                {% if team.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                            <small class="opacity-75">
+                                Created {{ team.created_at|date:"M d, Y" }} by {{ team.created_by.username }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Impact Assessment -->
+        <div class="delete-warning mb-4">
+            <h4 class="text-danger mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>Impact Assessment
+            </h4>
+            <p class="mb-4">
+                Before making changes to this team, please review the potential impact on your system.
+                This team has been involved in callback operations and contains important data.
+            </p>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="impact-card text-center">
+                        <div class="impact-number text-primary">{{ callback_count }}</div>
+                        <div class="small text-muted">Total Callbacks</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="impact-card text-center">
+                        <div class="impact-number text-warning">{{ rating_count }}</div>
+                        <div class="small text-muted">Ratings Received</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="impact-card text-center">
+                        <div class="impact-number text-info">{{ recent_callbacks }}</div>
+                        <div class="small text-muted">Recent (30 days)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommended Action -->
+        <div class="action-card mb-4">
+            <h5 class="mb-3">
+                <i class="bi bi-lightbulb text-warning me-2"></i>Recommended Action
+            </h5>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <h6><i class="bi bi-pause-circle text-warning me-2"></i>Deactivate Team (Recommended)</h6>
+                    <p class="mb-3">
+                        <strong>Deactivating</strong> the team will:
+                    </p>
+                    <ul class="mb-3">
+                        <li>Hide the team from new callback request forms</li>
+                        <li>Preserve all historical data and statistics</li>
+                        <li>Allow you to reactivate the team later if needed</li>
+                        <li>Maintain data integrity for reporting purposes</li>
+                    </ul>
+                    <p class="text-success">
+                        <i class="bi bi-check-circle me-1"></i>
+                        <strong>This is the safest option and can be undone.</strong>
+                    </p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="deactivate">
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="bi bi-pause-circle me-2"></i>Deactivate Team
+                        </button>
+                    </form>
+                    <div class="small text-muted mt-2">Safe & Reversible</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        {% if user.is_staff %}
+        <div class="danger-zone">
+            <h5 class="text-danger mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>Danger Zone
+            </h5>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <h6><i class="bi bi-trash text-danger me-2"></i>Permanently Delete Team</h6>
+                    <p class="mb-3">
+                        <strong class="text-danger">Permanent deletion</strong> will:
+                    </p>
+                    <ul class="mb-3">
+                        <li class="text-danger">Completely remove the team from the database</li>
+                        <li class="text-danger">Delete all associated callback records</li>
+                        <li class="text-danger">Remove all rating data for this team</li>
+                        <li class="text-danger">Break historical reports and analytics</li>
+                    </ul>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>This action cannot be undone!</strong>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <button type="button" class="btn btn-danger btn-lg" onclick="confirmPermanentDeletion()">
+                        <i class="bi bi-trash me-2"></i>Delete Forever
+                    </button>
+                    <div class="small text-danger mt-2">Irreversible Action</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Additional Information -->
+        <div class="mt-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle text-primary me-2"></i>Additional Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>What happens to existing data?</h6>
+                            <ul class="small">
+                                <li><strong>Deactivation:</strong> All data is preserved</li>
+                                <li><strong>Deletion:</strong> All data is permanently lost</li>
+                                <li>Callback records contain team references</li>
+                                <li>Ratings are linked to team performance</li>
+                            </ul>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6>Best practices:</h6>
+                            <ul class="small">
+                                <li>Always backup data before deletion</li>
+                                <li>Export team statistics for records</li>
+                                <li>Consider deactivation instead of deletion</li>
+                                <li>Notify relevant staff of team changes</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if callback_count > 0 %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        This team has <strong>{{ callback_count }} callback record{{ callback_count|pluralize }}</strong>.
+                        Consider <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="alert-link">reviewing these records</a>
+                        before making any changes.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar with help -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-question-circle text-info me-2"></i>Need Help?
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>When to deactivate:</h6>
+                <ul class="small mb-3">
+                    <li>Team is temporarily unavailable</li>
+                    <li>Reorganizing emergency response structure</li>
+                    <li>Equipment or staff changes</li>
+                    <li>Seasonal or temporary suspension</li>
+                </ul>
+
+                <h6>When to delete:</h6>
+                <ul class="small mb-3">
+                    <li>Team was created by mistake</li>
+                    <li>Duplicate team entries</li>
+                    <li>Test data cleanup</li>
+                    <li>Major system restructuring</li>
+                </ul>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Remember:</strong> Deactivation is usually the better choice for operational teams.
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-shield-check text-success me-2"></i>Data Protection
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small mb-2">
+                    Your callback system maintains data integrity by default.
+                    Deactivated teams preserve all historical information while
+                    preventing new assignments.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-outline-info" onclick="exportTeamData()">
+                        <i class="bi bi-download me-2"></i>Export Team Data
+                    </button>
+
+                    <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-list me-2"></i>View Team Callbacks
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Permanent Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-trash display-1 text-danger"></i>
+                </div>
+
+                <h6>Are you absolutely sure?</h6>
+                <p>This will permanently delete the team <strong>"{{ team.name }}"</strong> and:</p>
+
+                <ul class="text-danger">
+                    <li>Remove {{ callback_count }} callback record{{ callback_count|pluralize }}</li>
+                    <li>Delete {{ rating_count }} rating{{ rating_count|pluralize }}</li>
+                    <li>Break historical reports</li>
+                    <li>Cannot be undone</li>
+                </ul>
+
+                <div class="alert alert-danger">
+                    <strong>Type the team name to confirm:</strong>
+                    <input type="text" id="confirmTeamName" class="form-control mt-2"
+                           placeholder="Enter team name: {{ team.name }}">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" id="confirmDeleteBtn" class="btn btn-danger" disabled>
+                        <i class="bi bi-trash me-2"></i>Delete Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmPermanentDeletion() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    modal.show();
+}
+
+function exportTeamData() {
+    const teamData = {
+        team: {
+            id: {{ team.id }},
+            name: "{{ team.name|escapejs }}",
+            description: "{{ team.description|escapejs }}",
+            is_active: {{ team.is_active|yesno:"true,false" }},
+            created_at: "{{ team.created_at|date:'c' }}",
+            created_by: "{{ team.created_by.username|escapejs }}"
+        },
+        statistics: {
+            callback_count: {{ callback_count }},
+            rating_count: {{ rating_count }},
+            recent_callbacks: {{ recent_callbacks }}
+        },
+        export_timestamp: new Date().toISOString()
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(teamData, null, 2));
+    const downloadLink = document.createElement('a');
+    downloadLink.href = dataStr;
+    downloadLink.download = 'team_{{ team.id }}_backup.json';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    showToast('Team data exported successfully!', 'success');
+}
+
+// Team name confirmation for deletion
+document.getElementById('confirmTeamName').addEventListener('input', function(e) {
+    const teamName = "{{ team.name|escapejs }}";
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+    if (e.target.value === teamName) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('btn-outline-danger');
+        confirmBtn.classList.add('btn-danger');
+    } else {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.remove('btn-danger');
+        confirmBtn.classList.add('btn-outline-danger');
+    }
+});
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3 fade show`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}-fill me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 150);
+    }, 4000);
+}
+
+// Prevent accidental form submission
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const action = this.querySelector('input[name="action"]').value;
+
+        if (action === 'deactivate') {
+            const confirmed = confirm('Are you sure you want to deactivate this team? This will hide it from new callback forms but preserve all data.');
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
