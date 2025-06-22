@@ -141,11 +141,7 @@ AMBULANCE_CONFIG = {
         'rating_request': 'ambulance-rating-request',
         'rating_thankyou': 'ambulance-rating-thankyou',
         'rating_invalid': 'ambulance-rating-invalid',
-        'rating_failed': 'ambulance-failed-rating',
-        'additional_questions': 'ambulance-additional-questions',
-        'transfer_message': 'ambulance-transfer-message',
-        'transfer_error': 'ambulance-transfer-error',
-        'goodbye': 'ambulance-goodbye'
+        'rating_failed': 'ambulance-rating-invalid',
     },
 
     'RATING_RETRY_LIMIT': 3,  # How many times to retry getting a rating

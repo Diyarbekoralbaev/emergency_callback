@@ -1,5 +1,7 @@
 """
-Improved ambulance system with channel management and better status logic
+Simplified ambulance system with two-step process:
+1. Ask for rating (1-5) → Save rating → Play thank you
+2. Wait for keyboard input → If 0 = transfer, else = hangup
 """
 import asyncio
 import logging
@@ -19,7 +21,7 @@ class CallState(Enum):
     ANSWERED = "answered"
     WAITING_RATING = "waiting_rating"
     RATING_RECEIVED = "rating_received"
-    WAITING_ADDITIONAL = "waiting_additional"
+    WAITING_TRANSFER_DECISION = "waiting_transfer_decision"
     TRANSFERRING = "transferring"
     COMPLETED = "completed"
     FAILED = "failed"
@@ -35,7 +37,6 @@ class CallInfo:
     uniqueid: Optional[str] = None
     channel: Optional[str] = None
     rating: Optional[int] = None
-    additional_questions: Optional[bool] = None
     transferred: bool = False
     error: Optional[str] = None
     call_duration: Optional[int] = None
@@ -281,29 +282,40 @@ class CallManager:
             return 'transferred'
         elif call_info.rating is not None or call_info.state == CallState.COMPLETED:
             return 'completed'  # Either got rating or completed the flow
-        elif call_info.state in [CallState.WAITING_RATING, CallState.WAITING_ADDITIONAL, CallState.ANSWERED]:
+        elif call_info.state in [CallState.WAITING_RATING, CallState.WAITING_TRANSFER_DECISION, CallState.ANSWERED]:
             # Call was answered but hung up without completing
             return 'no_rating'
         else:
             return 'failed'
 
     async def handle_dtmf_input(self, uniqueid: str, digit: str) -> bool:
-        """Handle DTMF input for active calls"""
+        """Handle DTMF input for active calls - two-step process"""
         if uniqueid not in self.active_calls:
             return False
 
         call_info = self.active_calls[uniqueid]
 
-        if call_info.state == CallState.WAITING_RATING and digit in '12345':
-            return await self._handle_rating_input(call_info, digit)
-        elif call_info.state == CallState.WAITING_ADDITIONAL:
-            return await self._handle_additional_input(call_info, digit)
+        if call_info.state == CallState.WAITING_RATING:
+            # First step: Get rating (1-5)
+            if digit in '12345':
+                return await self._handle_rating_input(call_info, digit)
+            else:
+                # Invalid input - retry or play invalid message
+                return await self._handle_invalid_input(call_info)
+
+        elif call_info.state == CallState.WAITING_TRANSFER_DECISION:
+            # Second step: Check if they want transfer (0) or hangup (any other)
+            if digit == '0':
+                return await self._handle_transfer_request(call_info)
+            else:
+                # Any other digit - just hangup
+                return await self._handle_complete_call(call_info)
         else:
             await self.audio_manager.play_audio(call_info.channel, 'rating_invalid')
             return False
 
     async def _handle_rating_input(self, call_info: CallInfo, digit: str) -> bool:
-        """Handle rating DTMF input"""
+        """Handle valid rating DTMF input (1-5)"""
         call_info.rating = int(digit)
         call_info.state = CallState.RATING_RECEIVED
 
@@ -315,35 +327,54 @@ class CallManager:
         # Save rating to Django
         await self.rating_manager.save_rating(call_info)
 
-        # Continue with flow
+        # Play thank you and wait for transfer decision
         await self.audio_manager.play_audio(call_info.channel, 'rating_thankyou')
         await asyncio.sleep(3)
-        call_info.state = CallState.WAITING_ADDITIONAL
-        await self.audio_manager.play_audio(call_info.channel, 'additional_questions')
 
+        # Now wait for transfer decision
+        call_info.state = CallState.WAITING_TRANSFER_DECISION
         return True
 
-    async def _handle_additional_input(self, call_info: CallInfo, digit: str) -> bool:
-        """Handle additional questions DTMF input"""
-        if digit == '0':
-            call_info.additional_questions = True
-            call_info.transferred = True
-            call_info.state = CallState.TRANSFERRING
+    async def _handle_transfer_request(self, call_info: CallInfo) -> bool:
+        """Handle transfer request (digit 0 after rating)"""
+        call_info.transferred = True
+        call_info.state = CallState.TRANSFERRING
 
-            await self.audio_manager.play_audio(call_info.channel, 'transfer_message')
-            await asyncio.sleep(3)
-            await self._transfer_to_operator(call_info.channel)
-            return True
-        elif digit in '123456789':
-            call_info.additional_questions = False
-            call_info.state = CallState.COMPLETED
+        logger.info(f"Transfer requested for call {call_info.call_id}")
+        await self._transfer_to_operator(call_info.channel)
+        return True
 
-            await self.audio_manager.play_audio(call_info.channel, 'goodbye')
+    async def _handle_complete_call(self, call_info: CallInfo) -> bool:
+        """Handle call completion (any digit other than 0 after rating - no transfer wanted)"""
+        call_info.state = CallState.COMPLETED
+        logger.info(f"Call {call_info.call_id} completed - no transfer requested")
+        await self._hangup_call(call_info.channel)
+        return True
+
+    async def _handle_invalid_input(self, call_info: CallInfo) -> bool:
+        """Handle invalid DTMF input during rating phase"""
+        config = settings.AMBULANCE_CONFIG
+        retry_limit = config.get('RATING_RETRY_LIMIT', 3)
+
+        # Track retry attempts
+        if call_info.uniqueid not in self.rating_retries:
+            self.rating_retries[call_info.uniqueid] = 0
+
+        self.rating_retries[call_info.uniqueid] += 1
+
+        if self.rating_retries[call_info.uniqueid] >= retry_limit:
+            # Too many invalid attempts - hang up
+            logger.warning(f"Too many invalid attempts for call {call_info.call_id}")
+            await self.audio_manager.play_audio(call_info.channel, 'rating_invalid')
             await asyncio.sleep(3)
             await self._hangup_call(call_info.channel)
-            return True
-
-        return False
+            return False
+        else:
+            # Play invalid message and ask again
+            await self.audio_manager.play_audio(call_info.channel, 'rating_invalid')
+            await asyncio.sleep(2)
+            await self.audio_manager.play_audio(call_info.channel, 'rating_request')
+            return False
 
     async def _transfer_to_operator(self, channel: str):
         """Transfer call to operator"""
@@ -358,8 +389,6 @@ class CallManager:
             })
         except Exception as e:
             logger.error(f"Transfer failed: {e}")
-            await self.audio_manager.play_audio(channel, 'transfer_error')
-            await asyncio.sleep(3)
             await self._hangup_call(channel)
 
     async def _hangup_call(self, channel: str):
@@ -373,7 +402,7 @@ class CallManager:
             logger.error(f"Failed to hangup: {e}")
 
 class CompleteAmbulanceSystem:
-    """Complete ambulance callback system with channel management"""
+    """Complete ambulance callback system with simplified flow"""
 
     def __init__(self):
         self.manager = None
@@ -512,8 +541,8 @@ class CompleteAmbulanceSystem:
 
                 logger.info(f"Call {call_id} answered")
 
-                # Start rating request
-                await asyncio.sleep(3)
+                # Start rating request immediately
+                await asyncio.sleep(2)
                 call_info.state = CallState.WAITING_RATING
                 await self.audio_manager.play_audio(channel, 'rating_request')
 
@@ -603,7 +632,7 @@ class CompleteAmbulanceSystem:
         logger.info(f"Call {result.call_id} initiated, waiting for completion...")
 
         # Wait for call to complete or timeout
-        timeout = settings.AMBULANCE_CONFIG.get('CALL_TIMEOUT', 30) + 120  # Extra time for rating and transfer
+        timeout = settings.AMBULANCE_CONFIG.get('CALL_TIMEOUT', 30) + 60  # Extra time for rating
 
         for _ in range(timeout):
             await asyncio.sleep(1)
@@ -621,7 +650,7 @@ class CompleteAmbulanceSystem:
 # Django integration function
 async def complete_make_ambulance_call(callback_request) -> dict:
     """
-    Complete ambulance call with full flow and improved status logic
+    Complete ambulance call with simplified flow
     """
     try:
         system = CompleteAmbulanceSystem()
