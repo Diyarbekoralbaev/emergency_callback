@@ -21,7 +21,7 @@ def dashboard(request):
     total_calls_today = CallbackRequest.objects.filter(created_at__date=today).count()
     completed_calls_today = CallbackRequest.objects.filter(
         created_at__date=today,
-        status=CallStatus.COMPLETED
+        status__in=[CallStatus.COMPLETED, CallStatus.TRANSFERRED]
     ).count()
     failed_calls_today = CallbackRequest.objects.filter(
         created_at__date=today,
