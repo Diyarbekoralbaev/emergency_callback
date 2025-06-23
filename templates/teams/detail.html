@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ team.name }} - Team Details{% endblock %}
+{% block title %}{{ team.name }} - Детали бригады{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -98,19 +98,19 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
     <div>
         <h1 class="h2 mb-1">
-            <i class="bi bi-people text-primary"></i> Team Details
+            <i class="bi bi-people text-primary"></i> Детали бригады
         </h1>
-        <p class="text-muted mb-0">Comprehensive information and statistics</p>
+        <p class="text-muted mb-0">Полная информация и статистика</p>
     </div>
     <div class="btn-toolbar">
         <div class="btn-group me-2">
             <a href="{% url 'teams:edit' team.pk %}" class="btn btn-primary">
-                <i class="bi bi-pencil"></i> Edit Team
+                <i class="bi bi-pencil"></i> Редактировать бригаду
             </a>
         </div>
         <div class="btn-group me-2">
             <a href="{% url 'teams:list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Teams
+                <i class="bi bi-arrow-left"></i> Назад к бригадам
             </a>
         </div>
         <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
@@ -125,14 +125,14 @@
         <div class="d-flex justify-content-between align-items-start">
             <div>
                 <h2 class="mb-2">{{ team.name }}</h2>
-                <p class="mb-3 opacity-75">{{ team.description|default:"No description provided" }}</p>
+                <p class="mb-3 opacity-75">{{ team.description|default:"Описание отсутствует" }}</p>
                 <div class="d-flex align-items-center">
                     <span class="badge team-badge
                         {% if team.is_active %}bg-success{% else %}bg-warning text-dark{% endif %}">
                         {% if team.is_active %}
-                            <i class="bi bi-check-circle me-1"></i> Active
+                            <i class="bi bi-check-circle me-1"></i> Активна
                         {% else %}
-                            <i class="bi bi-pause-circle me-1"></i> Inactive
+                            <i class="bi bi-pause-circle me-1"></i> Неактивна
                         {% endif %}
                     </span>
                     <span class="ms-3 opacity-75">
@@ -142,11 +142,11 @@
             </div>
             <div class="text-end">
                 <div class="mb-2">
-                    <small class="opacity-75">Created</small>
-                    <div>{{ team.created_at|date:"M d, Y" }}</div>
+                    <small class="opacity-75">Создано</small>
+                    <div>{{ team.created_at|date:"d M, Y" }}</div>
                 </div>
                 <div>
-                    <small class="opacity-75">By</small>
+                    <small class="opacity-75">Пользователем</small>
                     <div>{{ team.created_by.username }}</div>
                 </div>
             </div>
@@ -159,28 +159,28 @@
     <div class="col-lg-3 col-md-6">
         <div class="stat-card text-center">
             <div class="stat-number text-primary">{{ total_callbacks }}</div>
-            <div class="stat-label">Total Callbacks</div>
+            <div class="stat-label">Всего вызовов</div>
         </div>
     </div>
 
     <div class="col-lg-3 col-md-6">
         <div class="stat-card text-center">
             <div class="stat-number text-success">{{ completed_callbacks }}</div>
-            <div class="stat-label">Completed</div>
+            <div class="stat-label">Завершено</div>
         </div>
     </div>
 
     <div class="col-lg-3 col-md-6">
         <div class="stat-card text-center">
             <div class="stat-number text-warning">{{ total_ratings }}</div>
-            <div class="stat-label">Ratings Received</div>
+            <div class="stat-label">Получено оценок</div>
         </div>
     </div>
 
     <div class="col-lg-3 col-md-6">
         <div class="stat-card text-center">
             <div class="stat-number text-info">{{ success_rate }}%</div>
-            <div class="stat-label">Success Rate</div>
+            <div class="stat-label">Успешность</div>
         </div>
     </div>
 </div>
@@ -191,7 +191,7 @@
     <div class="col-lg-8">
         <div class="activity-card">
             <h5 class="mb-4">
-                <i class="bi bi-star text-warning me-2"></i>Rating Analysis
+                <i class="bi bi-star text-warning me-2"></i>Анализ оценок
             </h5>
 
             {% if total_ratings > 0 %}
@@ -199,13 +199,13 @@
                 <div class="col-md-6">
                     <div class="text-center mb-4">
                         <div class="display-4 text-warning">{{ avg_rating }}</div>
-                        <div class="text-muted">Average Rating</div>
-                        <div class="small text-muted">{{ good_rating_percentage }}% rated 4+ stars</div>
+                        <div class="text-muted">Средняя оценка</div>
+                        <div class="small text-muted">{{ good_rating_percentage }}% оценок 4+ звезды</div>
                     </div>
                 </div>
 
                 <div class="col-md-6">
-                    <h6 class="mb-3">Rating Distribution</h6>
+                    <h6 class="mb-3">Распределение оценок</h6>
                     {% for dist in rating_distribution %}
                     <div class="d-flex align-items-center mb-2">
                         <div style="width: 80px;">
@@ -237,7 +237,7 @@
             {% else %}
             <div class="text-center py-4">
                 <i class="bi bi-star display-4 text-muted"></i>
-                <p class="text-muted mt-3">No ratings received yet</p>
+                <p class="text-muted mt-3">Оценки еще не получены</p>
             </div>
             {% endif %}
         </div>
@@ -247,29 +247,29 @@
     <div class="col-lg-4">
         <div class="activity-card">
             <h5 class="mb-4">
-                <i class="bi bi-calendar text-primary me-2"></i>Activity Summary
+                <i class="bi bi-calendar text-primary me-2"></i>Сводка активности
             </h5>
 
             <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
                 <div>
-                    <div class="fw-bold">Today</div>
-                    <small class="text-muted">Callbacks</small>
+                    <div class="fw-bold">Сегодня</div>
+                    <small class="text-muted">Вызовы</small>
                 </div>
                 <div class="h4 text-primary mb-0">{{ today_callbacks }}</div>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
                 <div>
-                    <div class="fw-bold">This Week</div>
-                    <small class="text-muted">Callbacks</small>
+                    <div class="fw-bold">На этой неделе</div>
+                    <small class="text-muted">Вызовы</small>
                 </div>
                 <div class="h4 text-info mb-0">{{ week_callbacks }}</div>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
                 <div>
-                    <div class="fw-bold">This Month</div>
-                    <small class="text-muted">Callbacks</small>
+                    <div class="fw-bold">В этом месяце</div>
+                    <small class="text-muted">Вызовы</small>
                 </div>
                 <div class="h4 text-success mb-0">{{ month_callbacks }}</div>
             </div>
@@ -277,7 +277,7 @@
             {% if pending_callbacks > 0 %}
             <div class="alert alert-warning">
                 <i class="bi bi-clock me-2"></i>
-                <strong>{{ pending_callbacks }}</strong> callback{{ pending_callbacks|pluralize }} currently pending
+                <strong>{{ pending_callbacks }}</strong> вызов{{ pending_callbacks|pluralize:",а,ов" }} в ожидании
             </div>
             {% endif %}
         </div>
@@ -290,10 +290,10 @@
         <div class="activity-card">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="mb-0">
-                    <i class="bi bi-clock-history text-primary me-2"></i>Recent Callbacks
+                    <i class="bi bi-clock-history text-primary me-2"></i>Последние вызовы
                 </h5>
                 <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-sm btn-outline-primary">
-                    View All <i class="bi bi-arrow-right"></i>
+                    Просмотреть все <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
 
@@ -316,13 +316,13 @@
                             {% endif %}">
                             {{ callback.get_status_display }}
                         </span>
-                        <div class="small text-muted mt-1">{{ callback.created_at|timesince }} ago</div>
+                        <div class="small text-muted mt-1">{{ callback.created_at|timesince }} назад</div>
                     </div>
                 </div>
 
                 {% if callback.has_rating %}
                 <div class="mt-2">
-                    <small class="text-muted">Rating: </small>
+                    <small class="text-muted">Оценка: </small>
                     {% for i in "12345" %}
                         {% if forloop.counter <= callback.rating.rating %}
                             <i class="bi bi-star-fill text-warning"></i>
@@ -338,9 +338,9 @@
             {% else %}
             <div class="text-center py-4">
                 <i class="bi bi-telephone-x display-4 text-muted"></i>
-                <p class="text-muted mt-3">No callbacks yet</p>
+                <p class="text-muted mt-3">Вызовов пока нет</p>
                 <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Create First Callback
+                    <i class="bi bi-plus-circle"></i> Создать первый вызов
                 </a>
             </div>
             {% endif %}
@@ -351,24 +351,24 @@
     <div class="col-lg-4">
         <div class="quick-actions mb-4">
             <h6 class="mb-3">
-                <i class="bi bi-lightning text-warning me-2"></i>Quick Actions
+                <i class="bi bi-lightning text-warning me-2"></i>Быстрые действия
             </h6>
 
             <div class="d-grid gap-2">
                 <a href="{% url 'callbacks:create' %}" class="btn btn-success">
-                    <i class="bi bi-telephone-plus me-2"></i>New Callback for Team
+                    <i class="bi bi-telephone-plus me-2"></i>Новый вызов для бригады
                 </a>
 
                 <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-outline-primary">
-                    <i class="bi bi-list me-2"></i>View All Callbacks
+                    <i class="bi bi-list me-2"></i>Просмотреть все вызовы
                 </a>
 
                 <a href="{% url 'callbacks:ratings' %}?team={{ team.id }}" class="btn btn-outline-warning">
-                    <i class="bi bi-star me-2"></i>View Team Ratings
+                    <i class="bi bi-star me-2"></i>Просмотреть оценки бригады
                 </a>
 
                 <button class="btn btn-outline-info" onclick="exportTeamData()">
-                    <i class="bi bi-download me-2"></i>Export Team Data
+                    <i class="bi bi-download me-2"></i>Экспортировать данные бригады
                 </button>
             </div>
         </div>
@@ -376,24 +376,24 @@
         <!-- Team Management -->
         <div class="activity-card">
             <h6 class="mb-3">
-                <i class="bi bi-gear text-secondary me-2"></i>Team Management
+                <i class="bi bi-gear text-secondary me-2"></i>Управление бригадой
             </h6>
 
             <div class="d-grid gap-2">
                 <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline-primary">
-                    <i class="bi bi-pencil me-2"></i>Edit Team
+                    <i class="bi bi-pencil me-2"></i>Редактировать бригаду
                 </a>
 
                 {% if team.is_active %}
                 <a href="{% url 'teams:delete' team.pk %}" class="btn btn-outline-warning">
-                    <i class="bi bi-pause-circle me-2"></i>Deactivate Team
+                    <i class="bi bi-pause-circle me-2"></i>Деактивировать бригаду
                 </a>
                 {% else %}
                 <form method="post" style="display: inline;">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="activate">
                     <button type="submit" class="btn btn-outline-success w-100">
-                        <i class="bi bi-play-circle me-2"></i>Reactivate Team
+                        <i class="bi bi-play-circle me-2"></i>Активировать бригаду
                     </button>
                 </form>
                 {% endif %}
@@ -401,7 +401,7 @@
                 {% if user.is_staff %}
                 <a href="/admin/teams/team/{{ team.id }}/change/"
                    class="btn btn-outline-secondary" target="_blank">
-                    <i class="bi bi-gear me-2"></i>Admin View
+                    <i class="bi bi-gear me-2"></i>Админ-просмотр
                 </a>
                 {% endif %}
             </div>
@@ -433,12 +433,12 @@ function exportTeamData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(teamData, null, 2));
     const downloadLink = document.createElement('a');
     downloadLink.href = dataStr;
-    downloadLink.download = 'team_{{ team.id }}_data.json';
+    downloadLink.download = 'brigada_{{ team.id }}_data.json';
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
 
-    showToast('Team data exported successfully!', 'success');
+    showToast('Данные бригады успешно экспортированы!', 'success');
 }
 
 // Animate progress bars on load

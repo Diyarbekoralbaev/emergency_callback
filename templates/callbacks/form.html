@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ title }} - Emergency Callback System{% endblock %}
+{% block title %}{{ title }} - Система экстренного обратного вызова{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -127,11 +127,11 @@
         <h1 class="h2 mb-1">
             <i class="bi bi-plus-circle text-success"></i> {{ title }}
         </h1>
-        <p class="text-muted mb-0">Create a new emergency callback request for patient feedback</p>
+        <p class="text-muted mb-0">Создать новый запрос экстренного обратного вызова для обратной связи с пациентом</p>
     </div>
     <div class="btn-toolbar">
         <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back to List
+            <i class="bi bi-arrow-left"></i> Назад к списку
         </a>
     </div>
 </div>
@@ -142,9 +142,9 @@
         <div class="card form-card">
             <div class="form-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-telephone-plus me-2"></i>Callback Request Details
+                    <i class="bi bi-telephone-plus me-2"></i>Детали запроса обратного вызова
                 </h5>
-                <p class="mb-0 mt-2 opacity-75">Fill in the patient's contact information and select the emergency team</p>
+                <p class="mb-0 mt-2 opacity-75">Заполните контактную информацию пациента и выберите экстренную бригаду</p>
             </div>
 
             <div class="card-body p-4">
@@ -154,7 +154,7 @@
                     <!-- Phone Number Section -->
                     <div class="form-section">
                         <h6 class="mb-3">
-                            <i class="bi bi-telephone text-primary me-2"></i>Contact Information
+                            <i class="bi bi-telephone text-primary me-2"></i>Контактная информация
                         </h6>
 
                         <div class="input-group-custom">
@@ -177,7 +177,7 @@
                         <div class="phone-preview-container" style="display: none;">
                             <div class="alert alert-info">
                                 <i class="bi bi-eye me-2"></i>
-                                <strong>Preview:</strong> <span class="phone-preview" id="phonePreview"></span>
+                                <strong>Предпросмотр:</strong> <span class="phone-preview" id="phonePreview"></span>
                             </div>
                         </div>
                     </div>
@@ -185,7 +185,7 @@
                     <!-- Team Selection Section -->
                     <div class="form-section">
                         <h6 class="mb-3">
-                            <i class="bi bi-people text-primary me-2"></i>Emergency Team
+                            <i class="bi bi-people text-primary me-2"></i>Экстренная бригада
                         </h6>
 
                         <div class="input-group-custom">
@@ -208,15 +208,15 @@
                     <!-- Process Information -->
                     <div class="process-info">
                         <h6 class="mb-3">
-                            <i class="bi bi-info-circle text-warning me-2"></i>What happens next?
+                            <i class="bi bi-info-circle text-warning me-2"></i>Что происходит дальше?
                         </h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="d-flex align-items-start">
                                     <div class="badge bg-primary me-3 mt-1">1</div>
                                     <div>
-                                        <strong>Automatic Call</strong>
-                                        <p class="mb-0 small text-muted">System calls the patient immediately</p>
+                                        <strong>Автоматический вызов</strong>
+                                        <p class="mb-0 small text-muted">Система немедленно звонит пациенту</p>
                                     </div>
                                 </div>
                             </div>
@@ -224,8 +224,8 @@
                                 <div class="d-flex align-items-start">
                                     <div class="badge bg-primary me-3 mt-1">2</div>
                                     <div>
-                                        <strong>Service Rating</strong>
-                                        <p class="mb-0 small text-muted">Patient rates service quality (1-5 stars)</p>
+                                        <strong>Оценка обслуживания</strong>
+                                        <p class="mb-0 small text-muted">Пациент оценивает качество обслуживания (1-5 звезд)</p>
                                     </div>
                                 </div>
                             </div>
@@ -233,8 +233,8 @@
                                 <div class="d-flex align-items-start">
                                     <div class="badge bg-primary me-3 mt-1">3</div>
                                     <div>
-                                        <strong>Additional Support</strong>
-                                        <p class="mb-0 small text-muted">Option to transfer to operator</p>
+                                        <strong>Дополнительная поддержка</strong>
+                                        <p class="mb-0 small text-muted">Возможность перевода на оператора</p>
                                     </div>
                                 </div>
                             </div>
@@ -242,8 +242,8 @@
                                 <div class="d-flex align-items-start">
                                     <div class="badge bg-primary me-3 mt-1">4</div>
                                     <div>
-                                        <strong>Quality Analysis</strong>
-                                        <p class="mb-0 small text-muted">Rating stored for service improvement</p>
+                                        <strong>Анализ качества</strong>
+                                        <p class="mb-0 small text-muted">Оценка сохраняется для улучшения обслуживания</p>
                                     </div>
                                 </div>
                             </div>
@@ -253,10 +253,10 @@
                     <!-- Form Actions -->
                     <div class="d-flex justify-content-between align-items-center mt-4">
                         <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-circle"></i> Cancel
+                            <i class="bi bi-x-circle"></i> Отмена
                         </a>
                         <button type="submit" class="btn btn-success btn-create">
-                            <i class="bi bi-telephone-outbound me-2"></i>Create Callback Request
+                            <i class="bi bi-telephone-outbound me-2"></i>Создать запрос обратного вызова
                         </button>
                     </div>
                 </form>
@@ -270,7 +270,7 @@
         <div class="card mb-4">
             <div class="card-header bg-transparent border-0">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-bar-chart text-primary"></i> Today's Activity
+                    <i class="bi bi-bar-chart text-primary"></i> Сегодняшняя активность
                 </h6>
             </div>
             <div class="card-body">
@@ -278,25 +278,25 @@
                     <div class="col-6">
                         <div class="stats-card">
                             <div class="h4 text-primary mb-1">{{ today_calls|default:0 }}</div>
-                            <div class="small text-muted">Calls Created</div>
+                            <div class="small text-muted">Создано вызовов</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="stats-card">
                             <div class="h4 text-success mb-1">{{ today_completed|default:0 }}</div>
-                            <div class="small text-muted">Completed</div>
+                            <div class="small text-muted">Завершено</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="stats-card">
                             <div class="h4 text-warning mb-1">{{ today_ratings|default:0 }}</div>
-                            <div class="small text-muted">Ratings</div>
+                            <div class="small text-muted">Оценки</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="stats-card">
                             <div class="h4 text-info mb-1">{{ today_success_rate|default:0 }}%</div>
-                            <div class="small text-muted">Success Rate</div>
+                            <div class="small text-muted">Процент успешных</div>
                         </div>
                     </div>
                 </div>
@@ -306,59 +306,59 @@
         <!-- Tips and Guidelines -->
         <div class="tips-card mb-4">
             <h6 class="mb-3">
-                <i class="bi bi-lightbulb text-warning me-2"></i>Best Practices
+                <i class="bi bi-lightbulb text-warning me-2"></i>Лучшие практики
             </h6>
 
             <div class="mb-3">
                 <h6 class="h6">
-                    <i class="bi bi-telephone text-primary me-2"></i>Phone Numbers
+                    <i class="bi bi-telephone text-primary me-2"></i>Телефонные номера
                 </h6>
                 <ul class="small mb-0 list-unstyled">
                     <li class="mb-1">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Include country code (998 for Uzbekistan)
+                        Указывайте код страны (+998 для Узбекистана)
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Verify number before submitting
+                        Проверяйте номер перед отправкой
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Mobile numbers work best
+                        Мобильные номера предпочтительны
                     </li>
                 </ul>
             </div>
 
             <div class="mb-3">
                 <h6 class="h6">
-                    <i class="bi bi-clock text-primary me-2"></i>Optimal Call Times
+                    <i class="bi bi-clock text-primary me-2"></i>Оптимальное время звонков
                 </h6>
                 <ul class="small mb-0 list-unstyled">
                     <li class="mb-1">
                         <i class="bi bi-sun text-warning me-2"></i>
-                        Weekdays: 9 AM - 6 PM
+                        Будни: с 9:00 до 18:00
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-moon text-secondary me-2"></i>
-                        Avoid early morning/late evening
+                        Избегайте раннего утра и позднего вечера
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-heart-pulse text-danger me-2"></i>
-                        Consider patient recovery time
+                        Учитывайте время восстановления пациента
                     </li>
                 </ul>
             </div>
 
             <div>
                 <h6 class="h6">
-                    <i class="bi bi-star text-warning me-2"></i>Rating System
+                    <i class="bi bi-star text-warning me-2"></i>Система оценок
                 </h6>
                 <ul class="small mb-0 list-unstyled">
-                    <li class="mb-1">⭐ Very Poor Service</li>
-                    <li class="mb-1">⭐⭐ Poor Service</li>
-                    <li class="mb-1">⭐⭐⭐ Average Service</li>
-                    <li class="mb-1">⭐⭐⭐⭐ Good Service</li>
-                    <li class="mb-1">⭐⭐⭐⭐⭐ Excellent Service</li>
+                    <li class="mb-1">⭐ Очень плохое обслуживание</li>
+                    <li class="mb-1">⭐⭐ Плохое обслуживание</li>
+                    <li class="mb-1">⭐⭐⭐ Среднее обслуживание</li>
+                    <li class="mb-1">⭐⭐⭐⭐ Хорошее обслуживание</li>
+                    <li class="mb-1">⭐⭐⭐⭐⭐ Отличное обслуживание</li>
                 </ul>
             </div>
         </div>
@@ -367,29 +367,29 @@
         <div class="card">
             <div class="card-header bg-light">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-question-circle text-info me-2"></i>Need Help?
+                    <i class="bi bi-question-circle text-info me-2"></i>Нужна помощь?
                 </h6>
             </div>
             <div class="card-body">
-                <p class="small mb-3">If you encounter any issues:</p>
+                <p class="small mb-3">Если возникли проблемы:</p>
                 <ul class="small list-unstyled">
                     <li class="mb-2">
                         <i class="bi bi-check text-success me-2"></i>
-                        Verify phone number format
+                        Проверьте формат номера телефона
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check text-success me-2"></i>
-                        Ensure emergency team is selected
+                        Убедитесь, что выбрана экстренная бригада
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check text-success me-2"></i>
-                        Contact system administrator
+                        Свяжитесь с системным администратором
                     </li>
                 </ul>
                 {% if user.is_staff %}
                 <div class="d-grid">
                     <a href="/admin/callbacks/callbackrequest/" class="btn btn-sm btn-outline-info" target="_blank">
-                        <i class="bi bi-gear"></i> Admin Panel
+                        <i class="bi bi-gear"></i> Панель администратора
                     </a>
                 </div>
                 {% endif %}
@@ -446,13 +446,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (phone.length < 9) {
             isValid = false;
-            message = 'Phone number too short (minimum 9 digits)';
+            message = 'Номер телефона слишком короткий (минимум 9 цифр)';
         } else if (phone.length > 15) {
             isValid = false;
-            message = 'Phone number too long (maximum 15 digits)';
+            message = 'Номер телефона слишком длинный (максимум 15 цифр)';
         } else if (phone.replace(/[^\d]/g, '').length < 9) {
             isValid = false;
-            message = 'Enter a valid phone number';
+            message = 'Введите действительный номер телефона';
         }
 
         // Update visual feedback
@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!team) {
             const teamSelect = document.getElementById('id_team');
             teamSelect.classList.add('is-invalid');
-            showToast('Please select an emergency team', 'error');
+            showToast('Пожалуйста, выберите экстренную бригаду', 'error');
             isValid = false;
         } else {
             document.getElementById('id_team').classList.remove('is-invalid');
@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show confirmation dialog
         const teamName = document.getElementById('id_team').selectedOptions[0].text;
-        const confirmMsg = `Create callback request for:\n\nPhone: ${formatPhoneDisplay(phoneNumber)}\nTeam: ${teamName}\n\nThe system will immediately call this number. Continue?`;
+        const confirmMsg = `Создать запрос обратного вызова для:\n\nТелефон: ${formatPhoneDisplay(phoneNumber)}\nБригада: ${teamName}\n\nСистема немедленно позвонит по этому номеру. Продолжить?`;
 
         if (!confirm(confirmMsg)) {
             return;
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show loading state
         const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Creating Request...';
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Создание запроса...';
         submitBtn.disabled = true;
 
         // Add loading overlay
@@ -528,8 +528,8 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.innerHTML = `
             <div class="text-center">
                 <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-                <h5>Creating Callback Request...</h5>
-                <p class="text-muted">Please wait while we process your request</p>
+                <h5>Создание запроса обратного вызова...</h5>
+                <p class="text-muted">Пожалуйста, подождите, пока мы обрабатываем ваш запрос</p>
             </div>
         `;
         document.body.appendChild(overlay);

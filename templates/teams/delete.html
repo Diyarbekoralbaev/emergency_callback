@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Delete Team - {{ team.name }}{% endblock %}
+{% block title %}Удаление бригады - {{ team.name }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -54,13 +54,13 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
     <div>
         <h1 class="h2 mb-1">
-            <i class="bi bi-exclamation-triangle text-danger"></i> Team Management
+            <i class="bi bi-exclamation-triangle text-danger"></i> Управление бригадой
         </h1>
-        <p class="text-muted mb-0">Deactivate or delete emergency team</p>
+        <p class="text-muted mb-0">Деактивация или удаление экстренной бригады</p>
     </div>
     <div class="btn-toolbar">
         <a href="{% url 'teams:detail' team.pk %}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Team
+            <i class="bi bi-arrow-left"></i> Назад к бригаде
         </a>
     </div>
 </div>
@@ -76,13 +76,13 @@
                     </div>
                     <div>
                         <h3 class="mb-1">{{ team.name }}</h3>
-                        <p class="mb-2 opacity-75">{{ team.description|default:"No description provided" }}</p>
+                        <p class="mb-2 opacity-75">{{ team.description|default:"Описание отсутствует" }}</p>
                         <div class="d-flex align-items-center">
                             <span class="badge {% if team.is_active %}bg-success{% else %}bg-warning text-dark{% endif %} me-3">
-                                {% if team.is_active %}Active{% else %}Inactive{% endif %}
+                                {% if team.is_active %}Активна{% else %}Неактивна{% endif %}
                             </span>
                             <small class="opacity-75">
-                                Created {{ team.created_at|date:"M d, Y" }} by {{ team.created_by.username }}
+                                Создана {{ team.created_at|date:"d M, Y" }} пользователем {{ team.created_by.username }}
                             </small>
                         </div>
                     </div>
@@ -93,32 +93,32 @@
         <!-- Impact Assessment -->
         <div class="delete-warning mb-4">
             <h4 class="text-danger mb-3">
-                <i class="bi bi-exclamation-triangle me-2"></i>Impact Assessment
+                <i class="bi bi-exclamation-triangle me-2"></i> Оценка последствий
             </h4>
             <p class="mb-4">
-                Before making changes to this team, please review the potential impact on your system.
-                This team has been involved in callback operations and contains important data.
+                Перед внесением изменений в эту бригаду, пожалуйста, оцените потенциальные последствия для вашей системы.
+                Эта бригада участвовала в операциях обратного вызова и содержит важные данные.
             </p>
 
             <div class="row g-3">
                 <div class="col-md-4">
                     <div class="impact-card text-center">
                         <div class="impact-number text-primary">{{ callback_count }}</div>
-                        <div class="small text-muted">Total Callbacks</div>
+                        <div class="small text-muted">Всего вызовов</div>
                     </div>
                 </div>
 
                 <div class="col-md-4">
                     <div class="impact-card text-center">
                         <div class="impact-number text-warning">{{ rating_count }}</div>
-                        <div class="small text-muted">Ratings Received</div>
+                        <div class="small text-muted">Получено оценок</div>
                     </div>
                 </div>
 
                 <div class="col-md-4">
                     <div class="impact-card text-center">
                         <div class="impact-number text-info">{{ recent_callbacks }}</div>
-                        <div class="small text-muted">Recent (30 days)</div>
+                        <div class="small text-muted">Недавние (30 дней)</div>
                     </div>
                 </div>
             </div>
@@ -127,24 +127,24 @@
         <!-- Recommended Action -->
         <div class="action-card mb-4">
             <h5 class="mb-3">
-                <i class="bi bi-lightbulb text-warning me-2"></i>Recommended Action
+                <i class="bi bi-lightbulb text-warning me-2"></i> Рекомендуемое действие
             </h5>
 
             <div class="row">
                 <div class="col-md-8">
-                    <h6><i class="bi bi-pause-circle text-warning me-2"></i>Deactivate Team (Recommended)</h6>
+                    <h6><i class="bi bi-pause-circle text-warning me-2"></i> Деактивировать бригаду (Рекомендуется)</h6>
                     <p class="mb-3">
-                        <strong>Deactivating</strong> the team will:
+                        <strong>Деактивация</strong> бригады приведет к:
                     </p>
                     <ul class="mb-3">
-                        <li>Hide the team from new callback request forms</li>
-                        <li>Preserve all historical data and statistics</li>
-                        <li>Allow you to reactivate the team later if needed</li>
-                        <li>Maintain data integrity for reporting purposes</li>
+                        <li>Скрытию бригады из новых форм запросов обратного вызова</li>
+                        <li>Сохранению всех исторических данных и статистики</li>
+                        <li>Возможности повторной активации бригады при необходимости</li>
+                        <li>Поддержанию целостности данных для отчетности</li>
                     </ul>
                     <p class="text-success">
                         <i class="bi bi-check-circle me-1"></i>
-                        <strong>This is the safest option and can be undone.</strong>
+                        <strong>Это наиболее безопасный вариант, который можно отменить.</strong>
                     </p>
                 </div>
                 <div class="col-md-4 text-center">
@@ -152,10 +152,10 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="deactivate">
                         <button type="submit" class="btn btn-warning btn-lg">
-                            <i class="bi bi-pause-circle me-2"></i>Deactivate Team
+                            <i class="bi bi-pause-circle me-2"></i> Деактивировать бригаду
                         </button>
                     </form>
-                    <div class="small text-muted mt-2">Safe & Reversible</div>
+                    <div class="small text-muted mt-2">Безопасно и обратимо</div>
                 </div>
             </div>
         </div>
@@ -164,31 +164,31 @@
         {% if user.is_staff %}
         <div class="danger-zone">
             <h5 class="text-danger mb-3">
-                <i class="bi bi-exclamation-triangle me-2"></i>Danger Zone
+                <i class="bi bi-exclamation-triangle me-2"></i> Зона опасности
             </h5>
 
             <div class="row">
                 <div class="col-md-8">
-                    <h6><i class="bi bi-trash text-danger me-2"></i>Permanently Delete Team</h6>
+                    <h6><i class="bi bi-trash text-danger me-2"></i> Полное удаление бригады</h6>
                     <p class="mb-3">
-                        <strong class="text-danger">Permanent deletion</strong> will:
+                        <strong class="text-danger">Полное удаление</strong> приведет к:
                     </p>
                     <ul class="mb-3">
-                        <li class="text-danger">Completely remove the team from the database</li>
-                        <li class="text-danger">Delete all associated callback records</li>
-                        <li class="text-danger">Remove all rating data for this team</li>
-                        <li class="text-danger">Break historical reports and analytics</li>
+                        <li class="text-danger">Полному удалению бригады из базы данных</li>
+                        <li class="text-danger">Удалению всех связанных записей вызовов</li>
+                        <li class="text-danger">Удалению всех данных об оценках для этой бригады</li>
+                        <li class="text-danger">Нарушению исторических отчетов и аналитики</li>
                     </ul>
                     <div class="alert alert-danger">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>This action cannot be undone!</strong>
+                        <strong>Это действие необратимо!</strong>
                     </div>
                 </div>
                 <div class="col-md-4 text-center">
                     <button type="button" class="btn btn-danger btn-lg" onclick="confirmPermanentDeletion()">
-                        <i class="bi bi-trash me-2"></i>Delete Forever
+                        <i class="bi bi-trash me-2"></i> Удалить навсегда
                     </button>
-                    <div class="small text-danger mt-2">Irreversible Action</div>
+                    <div class="small text-danger mt-2">Необратимое действие</div>
                 </div>
             </div>
         </div>
@@ -199,28 +199,28 @@
             <div class="card">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
-                        <i class="bi bi-info-circle text-primary me-2"></i>Additional Information
+                        <i class="bi bi-info-circle text-primary me-2"></i> Дополнительная информация
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>What happens to existing data?</h6>
+                            <h6>Что происходит с существующими данными?</h6>
                             <ul class="small">
-                                <li><strong>Deactivation:</strong> All data is preserved</li>
-                                <li><strong>Deletion:</strong> All data is permanently lost</li>
-                                <li>Callback records contain team references</li>
-                                <li>Ratings are linked to team performance</li>
+                                <li><strong>Деактивация:</strong> Все данные сохраняются</li>
+                                <li><strong>Удаление:</strong> Все данные безвозвратно теряются</li>
+                                <li>Записи вызовов содержат ссылки на бригаду</li>
+                                <li>Оценки связаны с эффективностью бригады</li>
                             </ul>
                         </div>
 
                         <div class="col-md-6">
-                            <h6>Best practices:</h6>
+                            <h6>Лучшие практики:</h6>
                             <ul class="small">
-                                <li>Always backup data before deletion</li>
-                                <li>Export team statistics for records</li>
-                                <li>Consider deactivation instead of deletion</li>
-                                <li>Notify relevant staff of team changes</li>
+                                <li>Всегда создавайте резервные копии данных перед удалением</li>
+                                <li>Экспортируйте статистику бригады для хранения</li>
+                                <li>Рассмотрите деактивацию вместо удаления</li>
+                                <li>Уведомляйте соответствующий персонал об изменениях в бригаде</li>
                             </ul>
                         </div>
                     </div>
@@ -228,9 +228,9 @@
                     {% if callback_count > 0 %}
                     <div class="alert alert-info mt-3">
                         <i class="bi bi-info-circle me-2"></i>
-                        This team has <strong>{{ callback_count }} callback record{{ callback_count|pluralize }}</strong>.
-                        Consider <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="alert-link">reviewing these records</a>
-                        before making any changes.
+                        Эта бригада имеет <strong>{{ callback_count }} запись{{ callback_count|pluralize:",и,ей" }} вызовов</strong>.
+                        Рекомендуется <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="alert-link">просмотреть эти записи</a>
+                        перед внесением изменений.
                     </div>
                     {% endif %}
                 </div>
@@ -243,29 +243,29 @@
         <div class="card">
             <div class="card-header bg-light">
                 <h6 class="mb-0">
-                    <i class="bi bi-question-circle text-info me-2"></i>Need Help?
+                    <i class="bi bi-question-circle text-info me-2"></i> Нужна помощь?
                 </h6>
             </div>
             <div class="card-body">
-                <h6>When to deactivate:</h6>
+                <h6>Когда деактивировать:</h6>
                 <ul class="small mb-3">
-                    <li>Team is temporarily unavailable</li>
-                    <li>Reorganizing emergency response structure</li>
-                    <li>Equipment or staff changes</li>
-                    <li>Seasonal or temporary suspension</li>
+                    <li>Бригада временно недоступна</li>
+                    <li>Реорганизация структуры экстренного реагирования</li>
+                    <li>Изменения в оборудовании или персонале</li>
+                    <li>Сезонная или временная приостановка</li>
                 </ul>
 
-                <h6>When to delete:</h6>
+                <h6>Когда удалять:</h6>
                 <ul class="small mb-3">
-                    <li>Team was created by mistake</li>
-                    <li>Duplicate team entries</li>
-                    <li>Test data cleanup</li>
-                    <li>Major system restructuring</li>
+                    <li>Бригада была создана по ошибке</li>
+                    <li>Дублирующиеся записи бригад</li>
+                    <li>Очистка тестовых данных</li>
+                    <li>Крупная реструктуризация системы</li>
                 </ul>
 
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Remember:</strong> Deactivation is usually the better choice for operational teams.
+                    <strong>Помните:</strong> Деактивация обычно является лучшим выбором для действующих бригад.
                 </div>
             </div>
         </div>
@@ -273,23 +273,22 @@
         <div class="card mt-3">
             <div class="card-header bg-light">
                 <h6 class="mb-0">
-                    <i class="bi bi-shield-check text-success me-2"></i>Data Protection
+                    <i class="bi bi-shield-check text-success me-2"></i> Защита данных
                 </h6>
             </div>
             <div class="card-body">
                 <p class="small mb-2">
-                    Your callback system maintains data integrity by default.
-                    Deactivated teams preserve all historical information while
-                    preventing new assignments.
+                    Ваша система обратных вызовов по умолчанию поддерживает целостность данных.
+                    Деактивированные бригады сохраняют всю историческую информацию, предотвращая новые назначения.
                 </p>
 
                 <div class="d-grid gap-2">
                     <button class="btn btn-sm btn-outline-info" onclick="exportTeamData()">
-                        <i class="bi bi-download me-2"></i>Export Team Data
+                        <i class="bi bi-download me-2"></i> Экспортировать данные бригады
                     </button>
 
                     <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-list me-2"></i>View Team Callbacks
+                        <i class="bi bi-list me-2"></i> Просмотреть вызовы бригады
                     </a>
                 </div>
             </div>
@@ -303,7 +302,7 @@
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Permanent Deletion
+                    <i class="bi bi-exclamation-triangle me-2"></i> Подтверждение полного удаления
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -312,29 +311,29 @@
                     <i class="bi bi-trash display-1 text-danger"></i>
                 </div>
 
-                <h6>Are you absolutely sure?</h6>
-                <p>This will permanently delete the team <strong>"{{ team.name }}"</strong> and:</p>
+                <h6>Вы абсолютно уверены?</h6>
+                <p>Это действие безвозвратно удалит бригаду <strong>"{{ team.name }}"</strong> и:</p>
 
                 <ul class="text-danger">
-                    <li>Remove {{ callback_count }} callback record{{ callback_count|pluralize }}</li>
-                    <li>Delete {{ rating_count }} rating{{ rating_count|pluralize }}</li>
-                    <li>Break historical reports</li>
-                    <li>Cannot be undone</li>
+                    <li>Удалит {{ callback_count }} запись{{ callback_count|pluralize:",и,ей" }} вызовов</li>
+                    <li>Удалит {{ rating_count }} оцен{{ rating_count|pluralize:"ку,ки,ок" }}</li>
+                    <li>Нарушит исторические отчеты</li>
+                    <li>Нельзя отменить</li>
                 </ul>
 
                 <div class="alert alert-danger">
-                    <strong>Type the team name to confirm:</strong>
+                    <strong>Введите название бригады для подтверждения:</strong>
                     <input type="text" id="confirmTeamName" class="form-control mt-2"
-                           placeholder="Enter team name: {{ team.name }}">
+                           placeholder="Введите название бригады: {{ team.name }}">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                 <form method="post" style="display: inline;">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="delete">
                     <button type="submit" id="confirmDeleteBtn" class="btn btn-danger" disabled>
-                        <i class="bi bi-trash me-2"></i>Delete Permanently
+                        <i class="bi bi-trash me-2"></i> Удалить навсегда
                     </button>
                 </form>
             </div>
@@ -369,12 +368,12 @@ function exportTeamData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(teamData, null, 2));
     const downloadLink = document.createElement('a');
     downloadLink.href = dataStr;
-    downloadLink.download = 'team_{{ team.id }}_backup.json';
+    downloadLink.download = 'brigada_{{ team.id }}_backup.json';
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
 
-    showToast('Team data exported successfully!', 'success');
+    showToast('Данные бригады успешно экспортированы!', 'success');
 }
 
 // Team name confirmation for deletion
@@ -422,7 +421,7 @@ document.querySelectorAll('form').forEach(form => {
         const action = this.querySelector('input[name="action"]').value;
 
         if (action === 'deactivate') {
-            const confirmed = confirm('Are you sure you want to deactivate this team? This will hide it from new callback forms but preserve all data.');
+            const confirmed = confirm('Вы уверены, что хотите деактивировать эту бригаду? Это скроет ее из новых форм обратного вызова, но сохранит все данные.');
             if (!confirmed) {
                 e.preventDefault();
             }

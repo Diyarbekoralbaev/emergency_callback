@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ title }} - Emergency Callback System{% endblock %}
+{% block title %}{{ title }} - Система экстренного обратного вызова{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -149,16 +149,16 @@
     <div>
         <h1 class="h2 mb-1">
             {% if team %}
-                <i class="bi bi-pencil text-primary"></i> Edit Team
+                <i class="bi bi-pencil text-primary"></i> Редактировать бригаду
             {% else %}
                 <i class="bi bi-plus-circle text-success"></i> {{ title }}
             {% endif %}
         </h1>
         <p class="text-muted mb-0">
             {% if team %}
-                Update team information and settings
+                Обновите информацию и настройки бригады
             {% else %}
-                Create a new emergency response team for callback management
+                Создайте новую экстренную бригаду для управления обратными вызовами
             {% endif %}
         </p>
     </div>
@@ -166,11 +166,11 @@
         <div class="btn-group me-2">
             {% if team %}
                 <a href="{% url 'teams:detail' team.pk %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Back to Team
+                    <i class="bi bi-arrow-left"></i> Назад к бригаде
                 </a>
             {% else %}
                 <a href="{% url 'teams:list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Back to Teams
+                    <i class="bi bi-arrow-left"></i> Назад к бригадам
                 </a>
             {% endif %}
         </div>
@@ -183,16 +183,16 @@
         <div class="card form-card">
             <div class="form-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-people me-2"></i>Team Information
+                    <i class="bi bi-people me-2"></i> Информация о бригаде
                     {% if team %}
                         <span class="badge bg-light text-primary ms-2">ID: {{ team.id }}</span>
                     {% endif %}
                 </h5>
                 <p class="mb-0 mt-2 opacity-75">
                     {% if team %}
-                        Update the team details below. Changes will be applied immediately.
+                        Обновите данные бригады ниже. Изменения будут применены немедленно.
                     {% else %}
-                        Fill in the details for your new emergency response team.
+                        Заполните данные для вашей новой экстренной бригады.
                     {% endif %}
                 </p>
             </div>
@@ -204,7 +204,7 @@
                     <!-- Team Name Section -->
                     <div class="form-section">
                         <h6 class="mb-3">
-                            <i class="bi bi-tag text-primary me-2"></i>Team Identity
+                            <i class="bi bi-tag text-primary me-2"></i> Идентификация бригады
                         </h6>
 
                         <div class="input-group-custom">
@@ -228,7 +228,7 @@
                     <!-- Description Section -->
                     <div class="form-section">
                         <h6 class="mb-3">
-                            <i class="bi bi-file-text text-primary me-2"></i>Team Description
+                            <i class="bi bi-file-text text-primary me-2"></i> Описание бригады
                         </h6>
 
                         <div class="input-group-custom">
@@ -252,7 +252,7 @@
                     {% if team %}
                     <div class="form-section">
                         <h6 class="mb-3">
-                            <i class="bi bi-toggle-on text-primary me-2"></i>Team Status
+                            <i class="bi bi-toggle-on text-primary me-2"></i> Статус бригады
                         </h6>
 
                         <div class="form-check form-switch">
@@ -261,9 +261,9 @@
                             <label class="form-check-label" for="is_active">
                                 <span id="statusLabel">
                                     {% if team.is_active %}
-                                        <i class="bi bi-check-circle text-success me-1"></i> Team is active
+                                        <i class="bi bi-check-circle text-success me-1"></i> Бригада активна
                                     {% else %}
-                                        <i class="bi bi-pause-circle text-warning me-1"></i> Team is inactive
+                                        <i class="bi bi-pause-circle text-warning me-1"></i> Бригада неактивна
                                     {% endif %}
                                 </span>
                             </label>
@@ -272,9 +272,9 @@
                             <i class="bi bi-info-circle text-primary"></i>
                             <span id="statusHelp">
                                 {% if team.is_active %}
-                                    Active teams appear in callback request forms and can receive new assignments
+                                    Активные бригады отображаются в формах запросов обратного вызова и могут получать новые задания
                                 {% else %}
-                                    Inactive teams are hidden from new callback forms but preserve all historical data
+                                    Неактивные бригады скрыты из новых форм обратного вызова, но сохраняют все исторические данные
                                 {% endif %}
                             </span>
                         </div>
@@ -284,15 +284,15 @@
                     <!-- Team Preview -->
                     <div class="team-preview" id="teamPreview" style="display: none;">
                         <h6 class="mb-2">
-                            <i class="bi bi-eye text-warning me-2"></i>Team Preview
+                            <i class="bi bi-eye text-warning me-2"></i> Предпросмотр бригады
                         </h6>
                         <div class="d-flex align-items-center">
                             <div class="me-3">
                                 <i class="bi bi-people-fill display-6 text-primary"></i>
                             </div>
                             <div>
-                                <h5 id="previewName" class="mb-1">Team Name</h5>
-                                <p id="previewDesc" class="mb-0 text-muted small">Team description...</p>
+                                <h5 id="previewName" class="mb-1">Название бригады</h5>
+                                <p id="previewDesc" class="mb-0 text-muted small">Описание бригады...</p>
                             </div>
                         </div>
                     </div>
@@ -301,19 +301,19 @@
                     <div class="d-flex justify-content-between align-items-center">
                         {% if team %}
                             <a href="{% url 'teams:detail' team.pk %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancel
+                                <i class="bi bi-x-circle"></i> Отмена
                             </a>
                         {% else %}
                             <a href="{% url 'teams:list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancel
+                                <i class="bi bi-x-circle"></i> Отмена
                             </a>
                         {% endif %}
 
                         <button type="submit" class="btn btn-success btn-create">
                             {% if team %}
-                                <i class="bi bi-check-circle me-2"></i>Update Team
+                                <i class="bi bi-check-circle me-2"></i> Обновить бригаду
                             {% else %}
-                                <i class="bi bi-plus-circle me-2"></i>Create Team
+                                <i class="bi bi-plus-circle me-2"></i> Создать бригаду
                             {% endif %}
                         </button>
                     </div>
@@ -329,7 +329,7 @@
         <div class="card mb-4">
             <div class="card-header bg-transparent border-0">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-bar-chart text-primary"></i> Current Statistics
+                    <i class="bi bi-bar-chart text-primary"></i> Текущая статистика
                 </h6>
             </div>
             <div class="card-body">
@@ -337,19 +337,19 @@
                     <div class="col-6">
                         <div class="stats-card">
                             <div class="h4 text-primary mb-1">{{ callback_count|default:0 }}</div>
-                            <div class="small text-muted">Total Callbacks</div>
+                            <div class="small text-muted">Всего вызовов</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="stats-card">
                             <div class="h4 text-warning mb-1">{{ rating_count|default:0 }}</div>
-                            <div class="small text-muted">Ratings</div>
+                            <div class="small text-muted">Оценки</div>
                         </div>
                     </div>
                     <div class="col-12">
                         <div class="stats-card">
-                            <div class="h4 text-info mb-1">{{ avg_rating|default:"N/A" }}</div>
-                            <div class="small text-muted">Average Rating</div>
+                            <div class="h4 text-info mb-1">{{ avg_rating|default:"Н/Д" }}</div>
+                            <div class="small text-muted">Средняя оценка</div>
                         </div>
                     </div>
                 </div>
@@ -357,7 +357,7 @@
                 {% if callback_count > 0 %}
                 <div class="mt-3 text-center">
                     <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-list"></i> View Callbacks
+                        <i class="bi bi-list"></i> Просмотреть вызовы
                     </a>
                 </div>
                 {% endif %}
@@ -368,7 +368,7 @@
         <div class="card mb-4">
             <div class="card-header bg-transparent border-0">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-bar-chart text-primary"></i> System Overview
+                    <i class="bi bi-bar-chart text-primary"></i> Обзор системы
                 </h6>
             </div>
             <div class="card-body">
@@ -376,13 +376,13 @@
                     <div class="col-6">
                         <div class="stats-card">
                             <div class="h4 text-primary mb-1">{{ team_count|default:0 }}</div>
-                            <div class="small text-muted">Existing Teams</div>
+                            <div class="small text-muted">Существующие бригады</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="stats-card">
                             <div class="h4 text-info mb-1">{{ total_callbacks|default:0 }}</div>
-                            <div class="small text-muted">Total Callbacks</div>
+                            <div class="small text-muted">Всего вызовов</div>
                         </div>
                     </div>
                 </div>
@@ -393,73 +393,73 @@
         <!-- Tips and Guidelines -->
         <div class="tips-card mb-4">
             <h6 class="mb-3">
-                <i class="bi bi-lightbulb text-warning me-2"></i>Best Practices
+                <i class="bi bi-lightbulb text-warning me-2"></i> Лучшие практики
             </h6>
 
             <div class="mb-3">
                 <h6 class="h6">
-                    <i class="bi bi-tag text-primary me-2"></i>Team Naming
+                    <i class="bi bi-tag text-primary me-2"></i> Название бригады
                 </h6>
                 <ul class="small mb-0 list-unstyled">
                     <li class="mb-1">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Use clear, descriptive names
+                        Используйте ясные, описательные названия
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Include specialization (Trauma, Cardiac)
+                        Указывайте специализацию (Травматология, Кардиология)
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Consider location or shift identifier
+                        Учитывайте местоположение или идентификатор смены
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Keep under 50 characters
+                        Держите длину менее 50 символов
                     </li>
                 </ul>
             </div>
 
             <div class="mb-3">
                 <h6 class="h6">
-                    <i class="bi bi-file-text text-primary me-2"></i>Good Descriptions
+                    <i class="bi bi-file-text text-primary me-2"></i> Хорошие описания
                 </h6>
                 <ul class="small mb-0 list-unstyled">
                     <li class="mb-1">
                         <i class="bi bi-arrow-right text-muted me-2"></i>
-                        Specify team specializations
+                        Указывайте специализацию бригады
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-arrow-right text-muted me-2"></i>
-                        Include operational hours
+                        Указывайте часы работы
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-arrow-right text-muted me-2"></i>
-                        Mention coverage areas
+                        Указывайте зоны покрытия
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-arrow-right text-muted me-2"></i>
-                        Note special equipment/skills
+                        Отмечайте специальное оборудование/навыки
                     </li>
                 </ul>
             </div>
 
             <div>
                 <h6 class="h6">
-                    <i class="bi bi-gear text-primary me-2"></i>Management Tips
+                    <i class="bi bi-gear text-primary me-2"></i> Советы по управлению
                 </h6>
                 <ul class="small mb-0 list-unstyled">
                     <li class="mb-1">
                         <i class="bi bi-lightbulb text-warning me-2"></i>
-                        Deactivate instead of deleting
+                        Деактивируйте вместо удаления
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-lightbulb text-warning me-2"></i>
-                        Update descriptions regularly
+                        Регулярно обновляйте описания
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-lightbulb text-warning me-2"></i>
-                        Monitor team performance
+                        Отслеживайте эффективность бригады
                     </li>
                 </ul>
             </div>
@@ -469,20 +469,20 @@
         <div class="card">
             <div class="card-header bg-light">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-question-circle text-info me-2"></i>Need Help?
+                    <i class="bi bi-question-circle text-info me-2"></i> Нужна помощь?
                 </h6>
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <h6 class="small fw-bold">Common Questions:</h6>
+                    <h6 class="small fw-bold">Частые вопросы:</h6>
                     <ul class="small list-unstyled">
                         <li class="mb-2">
-                            <strong>Q:</strong> Can I change team names later?<br>
-                            <span class="text-muted">A: Yes, team information can be updated anytime.</span>
+                            <strong>В:</strong> Можно ли изменить название бригады позже?<br>
+                            <span class="text-muted">О: Да, информацию о бригаде можно обновить в любое время.</span>
                         </li>
                         <li class="mb-2">
-                            <strong>Q:</strong> What happens to old callbacks?<br>
-                            <span class="text-muted">A: All historical data is preserved when editing teams.</span>
+                            <strong>В:</strong> Что происходит со старыми вызовами?<br>
+                            <span class="text-muted">О: Все исторические данные сохраняются при редактировании бригады.</span>
                         </li>
                     </ul>
                 </div>
@@ -490,7 +490,7 @@
                 {% if user.is_staff %}
                 <div class="d-grid">
                     <a href="/admin/teams/team/" class="btn btn-sm btn-outline-info" target="_blank">
-                        <i class="bi bi-gear"></i> Admin Panel
+                        <i class="bi bi-gear"></i> Панель администратора
                     </a>
                 </div>
                 {% endif %}
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentLength = input.value.length;
         const remaining = maxLength - currentLength;
 
-        counter.textContent = `${remaining} characters remaining`;
+        counter.textContent = `${remaining} символов осталось`;
         counter.className = 'char-counter text-muted';
 
         if (remaining < 20) {
@@ -552,13 +552,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (field === nameInput) {
             if (value.length < 3) {
                 isValid = false;
-                message = 'Team name must be at least 3 characters';
+                message = 'Название бригады должно содержать не менее 3 символов';
             } else if (value.length > 100) {
                 isValid = false;
-                message = 'Team name must be under 100 characters';
+                message = 'Название бригады должно быть короче 100 символов';
             } else if (!/^[a-zA-Z0-9\s\-_]+$/.test(value)) {
                 isValid = false;
-                message = 'Team name can only contain letters, numbers, spaces, hyphens, and underscores';
+                message = 'Название бригады может содержать только буквы, цифры, пробелы, дефисы и подчеркивания';
             }
         }
 
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (name.length >= 3) {
             document.getElementById('previewName').textContent = name;
-            document.getElementById('previewDesc').textContent = desc || 'No description provided';
+            document.getElementById('previewDesc').textContent = desc || 'Описание отсутствует';
             teamPreview.style.display = 'block';
         } else {
             teamPreview.style.display = 'none';
@@ -605,11 +605,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     statusToggle.addEventListener('change', function() {
         if (this.checked) {
-            statusLabel.innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> Team is active';
-            statusHelp.textContent = 'Active teams appear in callback request forms and can receive new assignments';
+            statusLabel.innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> Бригада активна';
+            statusHelp.textContent = 'Активные бригады отображаются в формах запросов обратного вызова и могут получать новые задания';
         } else {
-            statusLabel.innerHTML = '<i class="bi bi-pause-circle text-warning me-1"></i> Team is inactive';
-            statusHelp.textContent = 'Inactive teams are hidden from new callback forms but preserve all historical data';
+            statusLabel.innerHTML = '<i class="bi bi-pause-circle text-warning me-1"></i> Бригада неактивна';
+            statusHelp.textContent = 'Неактивные бригады скрыты из новых форм обратного вызова, но сохраняют все исторические данные';
         }
     });
     {% endif %}
@@ -623,14 +623,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let isFormValid = nameValid;
 
         if (!isFormValid) {
-            showToast('Please fix the validation errors before submitting', 'error');
+            showToast('Исправьте ошибки валидации перед отправкой', 'error');
             return;
         }
 
         // Show confirmation
         const teamName = nameInput.value.trim();
-        const action = "{% if team %}update{% else %}create{% endif %}";
-        const confirmMsg = `Are you sure you want to ${action} the team "${teamName}"?`;
+        const action = "{% if team %}обновить{% else %}создать{% endif %}";
+        const confirmMsg = `Вы уверены, что хотите ${action} бригаду "${teamName}"?`;
 
         if (!confirm(confirmMsg)) {
             return;
@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show loading state
         const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing...';
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Обработка...';
         submitBtn.disabled = true;
 
         // Submit after delay to show loading state

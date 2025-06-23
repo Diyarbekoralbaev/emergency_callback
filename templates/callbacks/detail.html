@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Callback Details - Emergency Callback System{% endblock %}
+{% block title %}Детали обратного вызова - Система экстренного обратного вызова{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -167,23 +167,23 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
     <div>
         <h1 class="h2 mb-1">
-            <i class="bi bi-eye text-primary"></i> Callback Details
+            <i class="bi bi-eye text-primary"></i> Детали обратного вызова
         </h1>
-        <p class="text-muted mb-0">Detailed information about emergency callback request</p>
+        <p class="text-muted mb-0">Подробная информация о запросе экстренного обратного вызова</p>
     </div>
     <div class="btn-toolbar">
         <div class="btn-group me-2">
             <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to List
+                <i class="bi bi-arrow-left"></i> Назад к списку
             </a>
         </div>
         <div class="btn-group me-2">
             <button type="button" class="btn btn-outline-primary" onclick="window.print()">
-                <i class="bi bi-printer"></i> Print
+                <i class="bi bi-printer"></i> Печать
             </button>
         </div>
         <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
-            <i class="bi bi-arrow-clockwise"></i> Refresh
+            <i class="bi bi-arrow-clockwise"></i> Обновить
         </button>
     </div>
 </div>
@@ -197,7 +197,7 @@
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <h3 class="mb-2">
-                            <i class="bi bi-telephone-fill me-2"></i>Callback Request
+                            <i class="bi bi-telephone-fill me-2"></i>Запрос обратного вызова
                         </h3>
                         <div class="phone-display">{{ callback.phone_number }}</div>
                     </div>
@@ -233,7 +233,7 @@
                 <!-- Quick Info Grid -->
                 <div class="info-grid">
                     <div class="info-item">
-                        <div class="info-label">Emergency Team</div>
+                        <div class="info-label">Экстренная бригада</div>
                         <div class="info-value">
                             <span class="badge bg-info me-2">{{ callback.team.name }}</span>
                             <small class="text-muted">(ID: {{ callback.team.id }})</small>
@@ -241,7 +241,7 @@
                     </div>
 
                     <div class="info-item">
-                        <div class="info-label">Requested By</div>
+                        <div class="info-label">Запрошено</div>
                         <div class="info-value">
                             <i class="bi bi-person-circle text-primary me-2"></i>
                             {{ callback.requested_by.username }}
@@ -249,18 +249,18 @@
                     </div>
 
                     <div class="info-item">
-                        <div class="info-label">Created</div>
-                        <div class="info-value">{{ callback.created_at|date:"M d, Y H:i:s" }}</div>
+                        <div class="info-label">Создано</div>
+                        <div class="info-value">{{ callback.created_at|date:"d M Y, H:i:s" }}</div>
                     </div>
 
                     {% if callback.call_id %}
                     <div class="info-item">
-                        <div class="info-label">Call ID</div>
+                        <div class="info-label">ID вызова</div>
                         <div class="info-value d-flex align-items-center">
                             <span class="font-monospace me-2">{{ callback.call_id|slice:":8" }}...</span>
                             <button class="btn btn-sm btn-outline-secondary copy-btn"
                                     onclick="copyToClipboard('{{ callback.call_id }}')"
-                                    title="Copy full ID">
+                                    title="Копировать полный ID">
                                 <i class="bi bi-copy"></i>
                             </button>
                         </div>
@@ -274,7 +274,7 @@
         <div class="card detail-card mb-4">
             <div class="card-header bg-light">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle text-primary me-2"></i>Technical Details
+                    <i class="bi bi-info-circle text-primary me-2"></i>Технические детали
                 </h6>
             </div>
             <div class="card-body">
@@ -282,30 +282,30 @@
                     <div class="col-md-6">
                         <table class="table table-sm table-borderless">
                             <tr>
-                                <td class="fw-semibold text-muted">Unique ID:</td>
+                                <td class="fw-semibold text-muted">Уникальный ID:</td>
                                 <td>
                                     {% if callback.uniqueid %}
                                         <span class="font-monospace">{{ callback.uniqueid }}</span>
                                     {% else %}
-                                        <span class="text-muted">Not assigned</span>
+                                        <span class="text-muted">Не назначен</span>
                                     {% endif %}
                                 </td>
                             </tr>
                             <tr>
-                                <td class="fw-semibold text-muted">Channel:</td>
+                                <td class="fw-semibold text-muted">Канал:</td>
                                 <td>
                                     {% if callback.channel %}
                                         <span class="font-monospace">{{ callback.channel }}</span>
                                     {% else %}
-                                        <span class="text-muted">Not assigned</span>
+                                        <span class="text-muted">Не назначен</span>
                                     {% endif %}
                                 </td>
                             </tr>
                             <tr>
-                                <td class="fw-semibold text-muted">Duration:</td>
+                                <td class="fw-semibold text-muted">Длительность:</td>
                                 <td>
                                     {% if callback.call_duration %}
-                                        <span class="badge bg-info">{{ callback.call_duration }}s</span>
+                                        <span class="badge bg-info">{{ callback.call_duration }}с</span>
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
@@ -316,38 +316,38 @@
                     <div class="col-md-6">
                         <table class="table table-sm table-borderless">
                             <tr>
-                                <td class="fw-semibold text-muted">Transferred:</td>
+                                <td class="fw-semibold text-muted">Переведено:</td>
                                 <td>
                                     {% if callback.transferred %}
                                         <span class="badge bg-info">
-                                            <i class="bi bi-arrow-right-square"></i> Yes
+                                            <i class="bi bi-arrow-right-square"></i> Да
                                         </span>
                                     {% else %}
-                                        <span class="badge bg-secondary">No</span>
+                                        <span class="badge bg-secondary">Нет</span>
                                     {% endif %}
                                 </td>
                             </tr>
                             <tr>
-                                <td class="fw-semibold text-muted">Additional Questions:</td>
+                                <td class="fw-semibold text-muted">Дополнительные вопросы:</td>
                                 <td>
                                     {% if callback.additional_questions is True %}
-                                        <span class="badge bg-success">Requested</span>
+                                        <span class="badge bg-success">Запрошены</span>
                                     {% elif callback.additional_questions is False %}
-                                        <span class="badge bg-secondary">Declined</span>
+                                        <span class="badge bg-secondary">Отклонены</span>
                                     {% else %}
-                                        <span class="badge bg-light text-dark">Not asked</span>
+                                        <span class="badge bg-light text-dark">Не задавались</span>
                                     {% endif %}
                                 </td>
                             </tr>
                             <tr>
-                                <td class="fw-semibold text-muted">Has Rating:</td>
+                                <td class="fw-semibold text-muted">Оценка:</td>
                                 <td>
                                     {% if callback.has_rating %}
                                         <span class="badge bg-success">
-                                            <i class="bi bi-star-fill"></i> Yes
+                                            <i class="bi bi-star-fill"></i> Да
                                         </span>
                                     {% else %}
-                                        <span class="badge bg-warning text-dark">No</span>
+                                        <span class="badge bg-warning text-dark">Нет</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -361,7 +361,7 @@
         <div class="card detail-card mb-4">
             <div class="card-header bg-light">
                 <h6 class="mb-0">
-                    <i class="bi bi-clock-history text-primary me-2"></i>Call Timeline
+                    <i class="bi bi-clock-history text-primary me-2"></i>Хронология вызова
                 </h6>
             </div>
             <div class="card-body">
@@ -370,11 +370,11 @@
                         <div class="timeline-marker bg-primary"></div>
                         <div>
                             <h6 class="mb-1">
-                                <i class="bi bi-plus-circle text-primary me-2"></i>Request Created
+                                <i class="bi bi-plus-circle text-primary me-2"></i>Запрос создан
                             </h6>
-                            <p class="mb-1 fw-semibold">{{ callback.created_at|date:"M d, Y H:i:s" }}</p>
+                            <p class="mb-1 fw-semibold">{{ callback.created_at|date:"d M Y, H:i:s" }}</p>
                             <small class="text-muted">
-                                <i class="bi bi-person me-1"></i>by {{ callback.requested_by.username }}
+                                <i class="bi bi-person me-1"></i>автор {{ callback.requested_by.username }}
                             </small>
                         </div>
                     </div>
@@ -384,11 +384,11 @@
                         <div class="timeline-marker bg-warning"></div>
                         <div>
                             <h6 class="mb-1">
-                                <i class="bi bi-telephone-outbound text-warning me-2"></i>Call Started
+                                <i class="bi bi-telephone-outbound text-warning me-2"></i>Вызов начат
                             </h6>
-                            <p class="mb-1 fw-semibold">{{ callback.call_started_at|date:"M d, Y H:i:s" }}</p>
+                            <p class="mb-1 fw-semibold">{{ callback.call_started_at|date:"d M Y, H:i:s" }}</p>
                             <small class="text-muted">
-                                <i class="bi bi-robot me-1"></i>System initiated call
+                                <i class="bi bi-robot me-1"></i>Система инициировала вызов
                             </small>
                         </div>
                     </div>
@@ -399,13 +399,13 @@
                         <div class="timeline-marker {% if callback.status == 'completed' %}bg-success{% else %}bg-danger{% endif %}"></div>
                         <div>
                             <h6 class="mb-1">
-                                <i class="bi bi-telephone-x {% if callback.status == 'completed' %}text-success{% else %}text-danger{% endif %} me-2"></i>Call Ended
+                                <i class="bi bi-telephone-x {% if callback.status == 'completed' %}text-success{% else %}text-danger{% endif %} me-2"></i>Вызов завершен
                             </h6>
-                            <p class="mb-1 fw-semibold">{{ callback.call_ended_at|date:"M d, Y H:i:s" }}</p>
+                            <p class="mb-1 fw-semibold">{{ callback.call_ended_at|date:"d M Y, H:i:s" }}</p>
                             {% if callback.call_started_at and callback.call_ended_at %}
                                 {% with duration=callback.call_ended_at|timesince:callback.call_started_at %}
                                 <small class="text-muted">
-                                    <i class="bi bi-stopwatch me-1"></i>Duration: {{ duration }}
+                                    <i class="bi bi-stopwatch me-1"></i>Длительность: {{ duration }}
                                 </small>
                                 {% endwith %}
                             {% endif %}
@@ -422,16 +422,16 @@
             <div class="card-body p-0">
                 <div class="error-display">
                     <h6 class="mb-3">
-                        <i class="bi bi-exclamation-triangle text-danger me-2"></i>Error Information
+                        <i class="bi bi-exclamation-triangle text-danger me-2"></i>Информация об ошибке
                     </h6>
                     <div class="alert alert-danger mb-3">
-                        <strong>Error Details:</strong><br>
+                        <strong>Детали ошибки:</strong><br>
                         {{ callback.error_message }}
                     </div>
                     {% if callback.status == 'failed' and user == callback.requested_by %}
                     <div class="text-center">
                         <button class="btn btn-warning" onclick="retryCall()">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Retry Call
+                            <i class="bi bi-arrow-clockwise me-2"></i>Повторить вызов
                         </button>
                     </div>
                     {% endif %}
@@ -449,7 +449,7 @@
             <div class="card-body p-0">
                 <div class="rating-display">
                     <h6 class="mb-3">
-                        <i class="bi bi-star-fill text-warning me-2"></i>Patient Rating
+                        <i class="bi bi-star-fill text-warning me-2"></i>Оценка пациента
                     </h6>
                     <div class="rating-stars-large">
                         {% for i in "12345" %}
@@ -463,7 +463,7 @@
                     <h3 class="text-warning mb-2">{{ rating.rating }}/5</h3>
                     <p class="mb-2 fw-semibold">{{ rating.rating_text }}</p>
                     <small class="text-muted">
-                        <i class="bi bi-clock me-1"></i>Received: {{ rating.timestamp|date:"M d, H:i" }}
+                        <i class="bi bi-clock me-1"></i>Получено: {{ rating.timestamp|date:"d M, H:i" }}
                     </small>
                 </div>
             </div>
@@ -472,20 +472,20 @@
         <div class="card detail-card mb-4">
             <div class="card-body text-center">
                 <i class="bi bi-hourglass-split display-4 text-muted mb-3"></i>
-                <h6>Rating Status</h6>
-                <p class="text-muted mb-0">Call completed but no rating received yet</p>
+                <h6>Статус оценки</h6>
+                <p class="text-muted mb-0">Вызов завершен, но оценка еще не получена</p>
             </div>
         </div>
         {% else %}
         <div class="card detail-card mb-4">
             <div class="card-body text-center">
                 <i class="bi bi-clock display-4 text-muted mb-3"></i>
-                <h6>Rating Status</h6>
+                <h6>Статус оценки</h6>
                 <p class="text-muted mb-0">
                     {% if callback.status == 'pending' or callback.status == 'dialing' %}
-                        Waiting for call to complete
+                        Ожидание завершения вызова
                     {% elif callback.status == 'failed' %}
-                        Call failed - no rating possible
+                        Вызов не удался - оценка невозможна
                     {% else %}
                         {{ callback.get_status_display }}
                     {% endif %}
@@ -498,9 +498,9 @@
         {% if callback.is_successful %}
         <div class="success-indicator mb-4">
             <h6 class="mb-2">
-                <i class="bi bi-check-circle-fill text-success me-2"></i>Successful Call
+                <i class="bi bi-check-circle-fill text-success me-2"></i>Успешный вызов
             </h6>
-            <p class="mb-0 small">This callback was successfully completed or transferred</p>
+            <p class="mb-0 small">Этот обратный вызов был успешно завершен или переведен</p>
         </div>
         {% endif %}
 
@@ -508,29 +508,29 @@
         <div class="card detail-card mb-4">
             <div class="card-header bg-light">
                 <h6 class="mb-0">
-                    <i class="bi bi-gear text-primary me-2"></i>Actions
+                    <i class="bi bi-gear text-primary me-2"></i>Действия
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     {% if callback.status == 'failed' and user == callback.requested_by %}
                     <button class="btn btn-warning" onclick="retryCall()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Retry Call
+                        <i class="bi bi-arrow-clockwise me-2"></i>Повторить вызов
                     </button>
                     {% endif %}
 
                     <button class="btn btn-outline-primary" onclick="window.print()">
-                        <i class="bi bi-printer me-2"></i>Print Details
+                        <i class="bi bi-printer me-2"></i>Печать деталей
                     </button>
 
                     <button class="btn btn-outline-info" onclick="exportDetails()">
-                        <i class="bi bi-download me-2"></i>Export Data
+                        <i class="bi bi-download me-2"></i>Экспорт данных
                     </button>
 
                     {% if user.is_staff %}
                     <a href="/admin/callbacks/callbackrequest/{{ callback.pk }}/change/"
                        class="btn btn-outline-secondary" target="_blank">
-                        <i class="bi bi-gear me-2"></i>Admin View
+                        <i class="bi bi-gear me-2"></i>Админ-панель
                     </a>
                     {% endif %}
                 </div>
@@ -541,7 +541,7 @@
         {% if callback.team.description %}
         <div class="action-card">
             <h6 class="mb-2">
-                <i class="bi bi-info-circle text-info me-2"></i>Team Information
+                <i class="bi bi-info-circle text-info me-2"></i>Информация о бригаде
             </h6>
             <p class="small mb-2"><strong>{{ callback.team.name }}</strong></p>
             <p class="small text-muted mb-0">{{ callback.team.description }}</p>
@@ -554,7 +554,7 @@
 // Copy to clipboard functionality
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(function() {
-        showToast('Copied to clipboard!', 'success');
+        showToast('Скопировано в буфер обмена!', 'success');
     }).catch(function() {
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
@@ -563,23 +563,23 @@ function copyToClipboard(text) {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        showToast('Copied to clipboard!', 'success');
+        showToast('Скопировано в буфер обмена!', 'success');
     });
 }
 
 // Retry call functionality
 function retryCall() {
-    if (confirm('Are you sure you want to retry this call? This will create a new callback request with the same details.')) {
+    if (confirm('Вы уверены, что хотите повторить этот вызов? Это создаст новый запрос обратного вызова с теми же данными.')) {
         const btn = event.target.closest('button');
         const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка...';
         btn.disabled = true;
 
         // In a real implementation, you would make an AJAX call to retry the callback
         setTimeout(() => {
             btn.innerHTML = originalHTML;
             btn.disabled = false;
-            showToast('Retry functionality would be implemented here. This would create a new callback request.', 'info');
+            showToast('Функция повтора будет реализована здесь. Это создаст новый запрос обратного вызова.', 'info');
         }, 2000);
     }
 }
@@ -588,14 +588,14 @@ function retryCall() {
 function exportDetails() {
     const btn = event.target.closest('button');
     const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Exporting...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Экспорт...';
     btn.disabled = true;
 
     // In a real implementation, you would generate and download the export
     setTimeout(() => {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
-        showToast('Export functionality would be implemented here', 'info');
+        showToast('Функция экспорта будет реализована здесь', 'info');
     }, 1500);
 }
 
@@ -606,7 +606,7 @@ let refreshInterval = setInterval(function() {
     const refreshBtn = document.querySelector('button[onclick="location.reload()"]');
     if (refreshBtn) {
         const originalHTML = refreshBtn.innerHTML;
-        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Auto-refreshing...';
+        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Автообновление...';
         setTimeout(() => {
             location.reload();
         }, 1000);
@@ -644,7 +644,7 @@ window.addEventListener('afterprint', function() {
 // Show loading indicator for slow network
 let slowNetworkTimer = setTimeout(() => {
     if (!document.readyState === 'complete') {
-        showToast('Loading details...', 'info');
+        showToast('Загрузка деталей...', 'info');
     }
 }, 2000);
 

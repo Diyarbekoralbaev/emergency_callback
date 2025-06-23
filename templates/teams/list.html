@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Emergency Teams - Emergency Callback System{% endblock %}
+{% block title %}Экстренные бригады - Система экстренного обратного вызова{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -115,14 +115,14 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
     <div>
         <h1 class="h2 mb-1">
-            <i class="bi bi-people text-primary"></i> Emergency Teams
+            <i class="bi bi-people text-primary"></i> Экстренные бригады
         </h1>
-        <p class="text-muted mb-0">Manage emergency response teams and monitor their performance</p>
+        <p class="text-muted mb-0">Управление экстренными бригадами и мониторинг их эффективности</p>
     </div>
     <div class="btn-toolbar">
         <div class="btn-group me-2">
             <a href="{% url 'teams:create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Add New Team
+                <i class="bi bi-plus-circle"></i> Добавить новую бригаду
             </a>
         </div>
         <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
@@ -137,19 +137,19 @@
         <div class="col-md-3">
             <div class="quick-stats text-center">
                 <div class="h4 text-primary mb-1">{{ total_teams }}</div>
-                <div class="small text-muted">Total Teams</div>
+                <div class="small text-muted">Всего бригад</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="quick-stats text-center">
                 <div class="h4 text-success mb-1">{{ active_teams }}</div>
-                <div class="small text-muted">Active Teams</div>
+                <div class="small text-muted">Активные бригады</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="quick-stats text-center">
                 <div class="h4 text-info mb-1">{{ total_callbacks }}</div>
-                <div class="small text-muted">Total Callbacks</div>
+                <div class="small text-muted">Всего вызовов</div>
             </div>
         </div>
         <div class="col-md-3">
@@ -161,7 +161,7 @@
                         0
                     {% endif %}
                 </div>
-                <div class="small text-muted">Avg per Team</div>
+                <div class="small text-muted">В среднем на бригаду</div>
             </div>
         </div>
     </div>
@@ -170,7 +170,7 @@
 <!-- Search and Filters -->
 <div class="search-card">
     <h6 class="mb-3">
-        <i class="bi bi-funnel text-primary me-2"></i>Search & Filter Teams
+        <i class="bi bi-funnel text-primary me-2"></i>Поиск и фильтрация бригад
     </h6>
 
     <form method="get" class="row g-3">
@@ -178,7 +178,7 @@
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input type="text" name="search" class="form-control"
-                       placeholder="Search by team name or description..." value="{{ search }}">
+                       placeholder="Поиск по названию или описанию бригады..." value="{{ search }}">
             </div>
         </div>
 
@@ -188,7 +188,7 @@
                        {% if show_inactive %}checked{% endif %}>
                 <label class="form-check-label" for="show_inactive">
                     <i class="bi bi-eye-slash text-muted me-1"></i>
-                    Show inactive teams
+                    Показать неактивные бригады
                 </label>
             </div>
         </div>
@@ -196,11 +196,11 @@
         <div class="col-md-3">
             <div class="d-grid gap-2 d-md-flex">
                 <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-search"></i> Filter
+                    <i class="bi bi-search"></i> Фильтровать
                 </button>
                 {% if search or show_inactive %}
                 <a href="{% url 'teams:list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Clear
+                    <i class="bi bi-x-circle"></i> Очистить
                 </a>
                 {% endif %}
             </div>
@@ -218,9 +218,9 @@
                 <span class="team-badge
                     {% if team.is_active %}bg-success{% else %}bg-warning text-dark{% endif %}">
                     {% if team.is_active %}
-                        <i class="bi bi-check-circle me-1"></i> Active
+                        <i class="bi bi-check-circle me-1"></i> Активна
                     {% else %}
-                        <i class="bi bi-pause-circle me-1"></i> Inactive
+                        <i class="bi bi-pause-circle me-1"></i> Неактивна
                     {% endif %}
                 </span>
 
@@ -230,7 +230,7 @@
                 {% if team.description %}
                 <p class="mb-0 opacity-75 small">{{ team.description|truncatewords:12 }}</p>
                 {% else %}
-                <p class="mb-0 opacity-75 small fst-italic">No description provided</p>
+                <p class="mb-0 opacity-75 small fst-italic">Описание отсутствует</p>
                 {% endif %}
             </div>
 
@@ -240,19 +240,19 @@
                         <div class="col-3">
                             <div class="stat-item">
                                 <div class="stat-number text-primary">{{ team.callback_count|default:0 }}</div>
-                                <div class="stat-label">Callbacks</div>
+                                <div class="stat-label">Вызовы</div>
                             </div>
                         </div>
                         <div class="col-3">
                             <div class="stat-item">
                                 <div class="stat-number text-success">{{ team.completed_count|default:0 }}</div>
-                                <div class="stat-label">Completed</div>
+                                <div class="stat-label">Завершено</div>
                             </div>
                         </div>
                         <div class="col-3">
                             <div class="stat-item">
                                 <div class="stat-number text-warning">{{ team.rating_count|default:0 }}</div>
-                                <div class="stat-label">Ratings</div>
+                                <div class="stat-label">Оценки</div>
                             </div>
                         </div>
                         <div class="col-3">
@@ -264,7 +264,7 @@
                                         -
                                     {% endif %}
                                 </div>
-                                <div class="stat-label">Avg Rating</div>
+                                <div class="stat-label">Ср. оценка</div>
                             </div>
                         </div>
                     </div>
@@ -274,7 +274,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <small class="text-muted">
                             <i class="bi bi-calendar3 me-1"></i>
-                            Created {{ team.created_at|date:"M d, Y" }}
+                            Создано {{ team.created_at|date:"d M, Y" }}
                         </small>
                         <small class="text-muted">
                             <i class="bi bi-person me-1"></i>
@@ -284,7 +284,7 @@
 
                     {% if team.avg_rating %}
                     <div class="d-flex align-items-center">
-                        <small class="text-muted me-2">Rating:</small>
+                        <small class="text-muted me-2">Оценка:</small>
                         {% for i in "12345" %}
                             {% if forloop.counter <= team.avg_rating|floatformat:0 %}
                                 <i class="bi bi-star-fill text-warning"></i>
@@ -301,22 +301,22 @@
                     <div class="row g-2">
                         <div class="col-4">
                             <a href="{% url 'teams:detail' team.pk %}" class="btn btn-outline-primary btn-sm w-100">
-                                <i class="bi bi-eye"></i> View
+                                <i class="bi bi-eye"></i> Просмотр
                             </a>
                         </div>
                         <div class="col-4">
                             <a href="{% url 'teams:edit' team.pk %}" class="btn btn-outline-secondary btn-sm w-100">
-                                <i class="bi bi-pencil"></i> Edit
+                                <i class="bi bi-pencil"></i> Редактировать
                             </a>
                         </div>
                         <div class="col-4">
                             {% if team.is_active %}
                             <button class="btn btn-outline-warning btn-sm w-100" onclick="showTeamActions({{ team.id }}, '{{ team.name|escapejs }}')">
-                                <i class="bi bi-gear"></i> More
+                                <i class="bi bi-gear"></i> Еще
                             </button>
                             {% else %}
                             <button class="btn btn-outline-success btn-sm w-100" onclick="reactivateTeam({{ team.id }})">
-                                <i class="bi bi-play-circle"></i> Enable
+                                <i class="bi bi-play-circle"></i> Активировать
                             </button>
                             {% endif %}
                         </div>
@@ -327,11 +327,11 @@
                 <div class="mt-3">
                     <div class="btn-group w-100" role="group">
                         <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-outline-info btn-sm">
-                            <i class="bi bi-telephone"></i> Callbacks
+                            <i class="bi bi-telephone"></i> Вызовы
                         </a>
                         {% if team.rating_count > 0 %}
                         <a href="{% url 'callbacks:ratings' %}?team={{ team.id }}" class="btn btn-outline-warning btn-sm">
-                            <i class="bi bi-star"></i> Ratings
+                            <i class="bi bi-star"></i> Оценки
                         </a>
                         {% endif %}
                     </div>
@@ -348,9 +348,9 @@
     <div>
         <small class="text-muted">
             <i class="bi bi-info-circle me-1"></i>
-            Showing {{ teams|length }} team{{ teams|length|pluralize }}
+            Показано {{ teams|length }} бригад{{ teams|length|pluralize:",а,ы" }}
             {% if search or show_inactive %}
-                (filtered)
+                (отфильтровано)
             {% endif %}
         </small>
     </div>
@@ -359,7 +359,7 @@
     <div>
         <small class="text-muted">
             <i class="bi bi-layers me-1"></i>
-            Showing first {{ teams|length }} results
+            Показаны первые {{ teams|length }} результатов
         </small>
     </div>
     {% endif %}
@@ -370,28 +370,28 @@
 <div class="empty-state">
     {% if search or show_inactive %}
         <i class="bi bi-search display-1 text-muted mb-3"></i>
-        <h4 class="text-muted mb-3">No teams found</h4>
+        <h4 class="text-muted mb-3">Бригады не найдены</h4>
         <p class="text-muted mb-4">
-            No teams match your search criteria "{{ search }}"
-            {% if not show_inactive %}or are currently active{% endif %}.
+            Нет бригад, соответствующих вашему запросу "{{ search }}"
+            {% if not show_inactive %}или активных на данный момент{% endif %}.
         </p>
         <div class="btn-group">
             <a href="{% url 'teams:list' %}" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left"></i> Clear Filters
+                <i class="bi bi-arrow-left"></i> Сбросить фильтры
             </a>
             <a href="{% url 'teams:create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Create New Team
+                <i class="bi bi-plus-circle"></i> Создать новую бригаду
             </a>
         </div>
     {% else %}
         <i class="bi bi-people display-1 text-muted mb-3"></i>
-        <h4 class="text-muted mb-3">No emergency teams created yet</h4>
+        <h4 class="text-muted mb-3">Экстренные бригады еще не созданы</h4>
         <p class="text-muted mb-4">
-            Get started by creating your first emergency response team.
-            Teams are essential for organizing callback requests and tracking performance.
+            Начните с создания вашей первой экстренной бригады.
+            Бригады необходимы для организации запросов обратного вызова и отслеживания эффективности.
         </p>
         <a href="{% url 'teams:create' %}" class="btn btn-primary btn-lg">
-            <i class="bi bi-plus-circle"></i> Create First Team
+            <i class="bi bi-plus-circle"></i> Создать первую бригаду
         </a>
     {% endif %}
 </div>
@@ -403,7 +403,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-gear me-2"></i>Team Actions
+                    <i class="bi bi-gear me-2"></i>Действия с бригадой
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -411,7 +411,7 @@
                 <!-- Content populated by JavaScript -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
             </div>
         </div>
     </div>
@@ -427,29 +427,29 @@ function showTeamActions(teamId, teamName) {
 
     const modalBody = document.getElementById('teamActionsBody');
     modalBody.innerHTML = `
-        <h6 class="mb-3">Actions for "${teamName}"</h6>
+        <h6 class="mb-3">Действия для "${teamName}"</h6>
 
         <div class="d-grid gap-2">
             <a href="/teams/${teamId}/" class="btn btn-outline-primary">
-                <i class="bi bi-eye me-2"></i>View Team Details
+                <i class="bi bi-eye me-2"></i>Просмотреть детали бригады
             </a>
 
             <a href="/teams/${teamId}/edit/" class="btn btn-outline-secondary">
-                <i class="bi bi-pencil me-2"></i>Edit Team Information
+                <i class="bi bi-pencil me-2"></i>Редактировать информацию о бригаде
             </a>
 
             <a href="/callbacks/create/" class="btn btn-outline-success">
-                <i class="bi bi-telephone-plus me-2"></i>Create Callback for Team
+                <i class="bi bi-telephone-plus me-2"></i>Создать вызов для бригады
             </a>
 
             <button class="btn btn-outline-info" onclick="exportTeamData(${teamId})">
-                <i class="bi bi-download me-2"></i>Export Team Data
+                <i class="bi bi-download me-2"></i>Экспортировать данные бригады
             </button>
 
             <hr>
 
             <a href="/teams/${teamId}/delete/" class="btn btn-outline-warning">
-                <i class="bi bi-pause-circle me-2"></i>Deactivate Team
+                <i class="bi bi-pause-circle me-2"></i>Деактивировать бригаду
             </a>
         </div>
     `;
@@ -459,26 +459,26 @@ function showTeamActions(teamId, teamName) {
 }
 
 function reactivateTeam(teamId) {
-    if (confirm('Are you sure you want to reactivate this team? It will become available for new callback requests.')) {
+    if (confirm('Вы уверены, что хотите активировать эту бригаду? Она станет доступной для новых запросов обратного вызова.')) {
         // In a real implementation, this would make an AJAX call
-        showToast('Team reactivation would be implemented here', 'info');
+        showToast('Активация бригады будет реализована здесь', 'info');
     }
 }
 
 function exportTeamData(teamId) {
     // Simple CSV export simulation
     const csvContent = "data:text/csv;charset=utf-8," +
-        "Team ID,Team Name,Status,Total Callbacks,Ratings,Average Rating\n" +
-        `${teamId},${currentTeamName},Active,0,0,0\n`;
+        "ID бригады,Название бригады,Статус,Всего вызовов,Оценки,Средняя оценка\n" +
+        `${teamId},${currentTeamName},Активна,0,0,0\n`;
 
     const link = document.createElement('a');
     link.href = encodeURI(csvContent);
-    link.download = `team_${teamId}_data.csv`;
+    link.download = `brigada_${teamId}_data.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    showToast('Team data exported successfully!', 'success');
+    showToast('Данные бригады успешно экспортированы!', 'success');
 }
 
 // Enhanced search functionality

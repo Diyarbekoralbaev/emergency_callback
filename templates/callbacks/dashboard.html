@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Emergency Callback System{% endblock %}
+{% block title %}Панель управления - Система экстренного обратного вызова{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -62,14 +62,14 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
     <div>
         <h1 class="h2 mb-1">
-            <i class="bi bi-speedometer2 text-primary"></i> Dashboard
+            <i class="bi bi-speedometer2 text-primary"></i> Панель управления
         </h1>
-        <p class="text-muted mb-0">Overview of today's emergency callback activities</p>
+        <p class="text-muted mb-0">Обзор сегодняшней активности экстренных обратных вызовов</p>
     </div>
     <div class="btn-toolbar">
         <div class="btn-group me-2">
             <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> New Callback
+                <i class="bi bi-plus-circle"></i> Новый обратный вызов
             </a>
         </div>
         <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
@@ -89,7 +89,7 @@
                     </div>
                     <div class="flex-grow-1">
                         <div class="metric-large text-primary">{{ total_calls_today }}</div>
-                        <div class="metric-label">Total Calls Today</div>
+                        <div class="metric-label">Всего вызовов сегодня</div>
                     </div>
                 </div>
             </div>
@@ -105,7 +105,7 @@
                     </div>
                     <div class="flex-grow-1">
                         <div class="metric-large text-success">{{ completed_calls_today }}</div>
-                        <div class="metric-label">Completed Successfully</div>
+                        <div class="metric-label">Успешно завершено</div>
                     </div>
                 </div>
             </div>
@@ -121,7 +121,7 @@
                     </div>
                     <div class="flex-grow-1">
                         <div class="metric-large text-warning">{{ pending_calls_today }}</div>
-                        <div class="metric-label">Pending/In Progress</div>
+                        <div class="metric-label">В ожидании/В процессе</div>
                     </div>
                 </div>
             </div>
@@ -137,7 +137,7 @@
                     </div>
                     <div class="flex-grow-1">
                         <div class="metric-large text-info">{{ success_rate }}%</div>
-                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-label">Процент успешных</div>
                     </div>
                 </div>
             </div>
@@ -151,7 +151,7 @@
         <div class="card stat-card h-100">
             <div class="card-header bg-transparent border-0 pb-0">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-star text-warning"></i> Average Rating Today
+                    <i class="bi bi-star text-warning"></i> Средняя оценка сегодня
                 </h6>
             </div>
             <div class="card-body text-center pt-2">
@@ -165,7 +165,7 @@
                     {% endfor %}
                 </div>
                 <div class="metric-large text-warning mb-1">{{ avg_rating_today }}/5.0</div>
-                <div class="metric-label">{{ total_ratings_today }} rating{{ total_ratings_today|pluralize }}</div>
+                <div class="metric-label">{{ total_ratings_today }} оцен{{ total_ratings_today|pluralize:"ка,ки,ок" }}</div>
             </div>
         </div>
     </div>
@@ -174,7 +174,7 @@
         <div class="card stat-card h-100">
             <div class="card-header bg-transparent border-0 pb-0">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-bar-chart text-primary"></i> Rating Distribution
+                    <i class="bi bi-bar-chart text-primary"></i> Распределение оценок
                 </h6>
             </div>
             <div class="card-body pt-2">
@@ -208,7 +208,7 @@
                 {% else %}
                     <div class="text-center py-3">
                         <i class="bi bi-star fs-2 text-muted"></i>
-                        <p class="text-muted mt-2 mb-0">No ratings collected today</p>
+                        <p class="text-muted mt-2 mb-0">Сегодня оценок не получено</p>
                     </div>
                 {% endif %}
             </div>
@@ -222,10 +222,10 @@
         <div class="card stat-card">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-clock-history text-primary"></i> Recent Calls
+                    <i class="bi bi-clock-history text-primary"></i> Недавние вызовы
                 </h6>
                 <a href="{% url 'callbacks:list' %}" class="btn btn-sm btn-outline-primary">
-                    View All <i class="bi bi-arrow-right"></i>
+                    Посмотреть все <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
             <div class="card-body pt-0">
@@ -234,13 +234,13 @@
                     <table class="table table-hover align-middle">
                         <thead>
                             <tr>
-                                <th class="border-0">Contact</th>
-                                <th class="border-0">Team</th>
-                                <th class="border-0">Status</th>
-                                <th class="border-0">Rating</th>
-                                <th class="border-0">Created</th>
-                                <th class="border-0">By</th>
-                                <th class="border-0">Actions</th>
+                                <th class="border-0">Контакт</th>
+                                <th class="border-0">Бригада</th>
+                                <th class="border-0">Статус</th>
+                                <th class="border-0">Оценка</th>
+                                <th class="border-0">Создано</th>
+                                <th class="border-0">Автор</th>
+                                <th class="border-0">Действия</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -260,19 +260,19 @@
                                 <td>
                                     {% if callback.status == 'completed' %}
                                         <span class="badge bg-success status-badge">
-                                            <i class="bi bi-check-circle"></i> Completed
+                                            <i class="bi bi-check-circle"></i> Завершено
                                         </span>
                                     {% elif callback.status == 'failed' %}
                                         <span class="badge bg-danger status-badge">
-                                            <i class="bi bi-x-circle"></i> Failed
+                                            <i class="bi bi-x-circle"></i> Не удалось
                                         </span>
                                     {% elif callback.status == 'pending' %}
                                         <span class="badge bg-warning status-badge">
-                                            <i class="bi bi-clock"></i> Pending
+                                            <i class="bi bi-clock"></i> В ожидании
                                         </span>
                                     {% elif callback.status == 'dialing' %}
                                         <span class="badge bg-primary status-badge">
-                                            <i class="bi bi-telephone-outbound"></i> Dialing
+                                            <i class="bi bi-telephone-outbound"></i> Набирается
                                         </span>
                                     {% else %}
                                         <span class="badge bg-secondary status-badge">{{ callback.get_status_display }}</span>
@@ -291,7 +291,7 @@
                                             <span class="ms-2 small text-muted">{{ callback.rating.rating }}/5</span>
                                         </div>
                                     {% else %}
-                                        <span class="text-muted small">No rating</span>
+                                        <span class="text-muted small">Без оценки</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -316,9 +316,9 @@
                 {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-telephone-x fs-1 text-muted"></i>
-                    <p class="text-muted mt-3 mb-3">No calls yet today</p>
+                    <p class="text-muted mt-3 mb-3">Сегодня вызовов еще не было</p>
                     <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Create First Callback
+                        <i class="bi bi-plus-circle"></i> Создать первый обратный вызов
                     </a>
                 </div>
                 {% endif %}
