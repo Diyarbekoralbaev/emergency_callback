@@ -1,0 +1,34 @@
+amqp==5.3.1
+argcomplete==3.5.3
+asgiref @ file:///croot/asgiref_1724072470684/work
+billiard==4.2.1
+celery==5.5.3
+celery-stubs==0.1.3
+click==8.1.8
+click-didyoumean==0.3.1
+click-plugins==1.1.1
+click-repl==0.3.0
+cron-descriptor==1.4.5
+Django @ file:///croot/django_1745263580040/work
+django-celery==3.1.17
+django-celery-beat==2.8.1
+django-cors-headers==4.7.0
+django-timezone-field==7.1
+kombu==5.5.4
+packaging==25.0
+panoramisk==1.4
+pipx==1.7.1
+platformdirs==4.3.8
+prompt_toolkit==3.0.51
+python-crontab==3.2.0
+python-dateutil==2.9.0.post0
+python-decouple==3.8
+redis==6.2.0
+setuptools==78.1.1
+six==1.17.0
+sqlparse @ file:///croot/sqlparse_1734704446487/work
+tzdata==2025.2
+userpath==1.9.2
+vine==5.1.0
+wcwidth==0.2.13
+wheel==0.45.1
