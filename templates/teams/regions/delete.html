@@ -1,0 +1,460 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление региона - {{ region.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-warning {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
+        border: 2px solid #dc3545;
+        border-radius: 16px;
+        padding: 2rem;
+    }
+
+    .impact-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        margin-bottom: 1rem;
+    }
+
+    .impact-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .action-card {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 2px solid #ffc107;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .danger-zone {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
+        border: 2px solid #dc3545;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .region-info {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 1.5rem;
+    }
+
+    .region-code {
+        font-family: 'Courier New', monospace;
+        font-size: 1.2rem;
+        font-weight: 700;
+        background: rgba(255,255,255,0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">
+            <i class="bi bi-exclamation-triangle text-danger"></i> Управление регионом
+        </h1>
+        <p class="text-muted mb-0">Деактивация или удаление региона</p>
+    </div>
+    <div class="btn-toolbar">
+        <a href="{% url 'teams:region_detail' region.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Назад к региону
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Region Information -->
+        <div class="card mb-4" style="border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-radius: 16px;">
+            <div class="region-info">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="bi bi-geo-alt-fill display-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-1">{{ region.name }}</h3>
+                        <div class="region-code mb-2">{{ region.code }}</div>
+                        {% if region.description %}
+                        <p class="mb-2 opacity-75">{{ region.description }}</p>
+                        {% endif %}
+                        <div class="d-flex align-items-center">
+                            <span class="badge {% if region.is_active %}bg-success{% else %}bg-warning text-dark{% endif %} me-3">
+                                {% if region.is_active %}Активен{% else %}Неактивен{% endif %}
+                            </span>
+                            <small class="opacity-75">
+                                Создан {{ region.created_at|date:"d M, Y" }} пользователем {{ region.created_by.username }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Impact Assessment -->
+        <div class="delete-warning mb-4">
+            <h4 class="text-danger mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i> Оценка последствий
+            </h4>
+            <p class="mb-4">
+                Перед внесением изменений в этот регион, пожалуйста, оцените потенциальные последствия для вашей системы.
+                Этот регион содержит бригады и связанные данные обратных вызовов.
+            </p>
+
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="impact-card text-center">
+                        <div class="impact-number text-primary">{{ active_team_count }}</div>
+                        <div class="small text-muted">Активные бригады</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="impact-card text-center">
+                        <div class="impact-number text-success">{{ team_count }}</div>
+                        <div class="small text-muted">Всего бригад</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="impact-card text-center">
+                        <div class="impact-number text-info">{{ total_callbacks }}</div>
+                        <div class="small text-muted">Всего вызовов</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="impact-card text-center">
+                        <div class="impact-number text-warning">{{ recent_callbacks }}</div>
+                        <div class="small text-muted">Недавние (30 дней)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommended Action -->
+        <div class="action-card mb-4">
+            <h5 class="mb-3">
+                <i class="bi bi-lightbulb text-warning me-2"></i> Рекомендуемое действие
+            </h5>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <h6><i class="bi bi-pause-circle text-warning me-2"></i> Деактивировать регион (Рекомендуется)</h6>
+                    <p class="mb-3">
+                        <strong>Деактивация</strong> региона приведет к:
+                    </p>
+                    <ul class="mb-3">
+                        <li>Скрытию региона из форм создания новых бригад</li>
+                        <li>Сохранению всех существующих бригад и их данных</li>
+                        <li>Возможности повторной активации региона при необходимости</li>
+                        <li>Поддержанию целостности данных для отчетности</li>
+                    </ul>
+                    <p class="text-success">
+                        <i class="bi bi-check-circle me-1"></i>
+                        <strong>Это наиболее безопасный вариант, который можно отменить.</strong>
+                    </p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="deactivate">
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="bi bi-pause-circle me-2"></i> Деактивировать регион
+                        </button>
+                    </form>
+                    <div class="small text-muted mt-2">Безопасно и обратимо</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        {% if user.is_staff %}
+        <div class="danger-zone">
+            <h5 class="text-danger mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i> Зона опасности
+            </h5>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <h6><i class="bi bi-trash text-danger me-2"></i> Полное удаление региона</h6>
+                    <p class="mb-3">
+                        <strong class="text-danger">Полное удаление</strong> приведет к:
+                    </p>
+                    <ul class="mb-3">
+                        <li class="text-danger">Полному удалению региона из базы данных</li>
+                        <li class="text-danger">Удалению всех бригад в этом регионе</li>
+                        <li class="text-danger">Удалению всех связанных записей вызовов</li>
+                        <li class="text-danger">Удалению всех данных об оценках</li>
+                        <li class="text-danger">Нарушению исторических отчетов и аналитики</li>
+                    </ul>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Это действие необратимо и затронет {{ team_count }} бригад{{ team_count|pluralize:",у,ы" }}!</strong>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <button type="button" class="btn btn-danger btn-lg" onclick="confirmPermanentDeletion()">
+                        <i class="bi bi-trash me-2"></i> Удалить навсегда
+                    </button>
+                    <div class="small text-danger mt-2">Необратимое действие</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Additional Information -->
+        <div class="mt-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle text-primary me-2"></i> Дополнительная информация
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Что происходит с существующими данными?</h6>
+                            <ul class="small">
+                                <li><strong>Деактивация:</strong> Все данные сохраняются</li>
+                                <li><strong>Удаление:</strong> Все данные безвозвратно теряются</li>
+                                <li>Бригады связаны с регионом</li>
+                                <li>Записи вызовов содержат ссылки на бригады региона</li>
+                            </ul>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6>Лучшие практики:</h6>
+                            <ul class="small">
+                                <li>Всегда создавайте резервные копии данных перед удалением</li>
+                                <li>Экспортируйте статистику региона для хранения</li>
+                                <li>Рассмотрите деактивацию вместо удаления</li>
+                                <li>Уведомляйте персонал об изменениях в структуре регионов</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if team_count > 0 %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Этот регион содержит <strong>{{ team_count }} бригад{{ team_count|pluralize:",у,ы" }}</strong> и
+                        <strong>{{ total_callbacks }} запис{{ total_callbacks|pluralize:"ь,и,ей" }} вызовов</strong>.
+                        Рекомендуется <a href="{% url 'teams:list' %}?region={{ region.id }}" class="alert-link">просмотреть эти данные</a>
+                        перед внесением изменений.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar with help -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-question-circle text-info me-2"></i> Нужна помощь?
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Когда деактивировать:</h6>
+                <ul class="small mb-3">
+                    <li>Временная реорганизация территориального деления</li>
+                    <li>Изменения в административной структуре</li>
+                    <li>Сезонные изменения в зонах покрытия</li>
+                    <li>Технические изменения в системе</li>
+                </ul>
+
+                <h6>Когда удалять:</h6>
+                <ul class="small mb-3">
+                    <li>Регион был создан по ошибке</li>
+                    <li>Дублирующиеся записи регионов</li>
+                    <li>Очистка тестовых данных</li>
+                    <li>Крупная реструктуризация всей системы</li>
+                </ul>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Помните:</strong> Деактивация обычно является лучшим выбором для действующих регионов с бригадами.
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-shield-check text-success me-2"></i> Защита данных
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small mb-2">
+                    Система обратных вызовов поддерживает целостность данных по умолчанию.
+                    Деактивированные регионы сохраняют всю историческую информацию.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-outline-info" onclick="exportRegionData()">
+                        <i class="bi bi-download me-2"></i> Экспортировать данные региона
+                    </button>
+
+                    <a href="{% url 'teams:list' %}?region={{ region.id }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-people me-2"></i> Просмотреть бригады региона
+                    </a>
+
+                    <a href="{% url 'callbacks:list' %}?region={{ region.id }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-telephone me-2"></i> Просмотреть вызовы региона
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Подтверждение полного удаления
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-trash display-1 text-danger"></i>
+                </div>
+
+                <h6>Вы абсолютно уверены?</h6>
+                <p>Это действие безвозвратно удалит регион <strong>"{{ region.name }}" ({{ region.code }})</strong> и:</p>
+
+                <ul class="text-danger">
+                    <li>Удалит {{ team_count }} бригад{{ team_count|pluralize:",у,ы" }}</li>
+                    <li>Удалит {{ total_callbacks }} запис{{ total_callbacks|pluralize:"ь,и,ей" }} вызовов</li>
+                    <li>Нарушит исторические отчеты</li>
+                    <li>Нельзя отменить</li>
+                </ul>
+
+                <div class="alert alert-danger">
+                    <strong>Введите код региона для подтверждения:</strong>
+                    <input type="text" id="confirmRegionCode" class="form-control mt-2"
+                           placeholder="Введите код региона: {{ region.code }}">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" id="confirmDeleteBtn" class="btn btn-danger" disabled>
+                        <i class="bi bi-trash me-2"></i> Удалить навсегда
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmPermanentDeletion() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    modal.show();
+}
+
+function exportRegionData() {
+    const regionData = {
+        region: {
+            id: {{ region.id }},
+            name: "{{ region.name|escapejs }}",
+            code: "{{ region.code|escapejs }}",
+            description: "{{ region.description|escapejs }}",
+            is_active: {{ region.is_active|yesno:"true,false" }},
+            created_at: "{{ region.created_at|date:'c' }}",
+            created_by: "{{ region.created_by.username|escapejs }}"
+        },
+        statistics: {
+            active_team_count: {{ active_team_count }},
+            team_count: {{ team_count }},
+            total_callbacks: {{ total_callbacks }},
+            recent_callbacks: {{ recent_callbacks }}
+        },
+        export_timestamp: new Date().toISOString()
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(regionData, null, 2));
+    const downloadLink = document.createElement('a');
+    downloadLink.href = dataStr;
+    downloadLink.download = 'region_{{ region.id }}_{{ region.code }}_backup.json';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    showToast('Данные региона успешно экспортированы!', 'success');
+}
+
+// Region code confirmation for deletion
+document.getElementById('confirmRegionCode').addEventListener('input', function(e) {
+    const regionCode = "{{ region.code|escapejs }}";
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+    if (e.target.value === regionCode) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('btn-outline-danger');
+        confirmBtn.classList.add('btn-danger');
+    } else {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.remove('btn-danger');
+        confirmBtn.classList.add('btn-outline-danger');
+    }
+});
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3 fade show`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}-fill me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 150);
+    }, 4000);
+}
+
+// Prevent accidental form submission
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const action = this.querySelector('input[name="action"]').value;
+
+        if (action === 'deactivate') {
+            const confirmed = confirm('Вы уверены, что хотите деактивировать этот регион? Это скроет его из новых форм создания бригад, но сохранит все данные.');
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,704 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Система экстренного обратного вызова{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        color: white;
+        padding: 2rem;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+
+    .input-group-custom {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+
+    .input-group-custom .form-control,
+    .input-group-custom .form-control:focus {
+        padding-left: 3rem;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .input-group-custom .form-control:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+        font-size: 1.1rem;
+    }
+
+    .char-counter {
+        font-size: 0.8rem;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+
+    .char-counter.warning {
+        color: #ffc107;
+    }
+
+    .char-counter.danger {
+        color: #dc3545;
+    }
+
+    .stats-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        height: 100%;
+        border: 1px solid #dee2e6;
+    }
+
+    .tips-card {
+        background: linear-gradient(135deg, #e7f3ff 0%, #cfe7ff 100%);
+        border: 1px solid #b3d9ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(25, 135, 84, 0.3);
+    }
+
+    .region-preview {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #ffdf9a;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .code-preview {
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        font-size: 1.1rem;
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    @media (max-width: 768px) {
+        .form-card {
+            margin: 0 0.5rem;
+        }
+
+        .input-group-custom .form-control {
+            padding-left: 2.5rem;
+        }
+
+        .input-icon {
+            left: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">
+            {% if region %}
+                <i class="bi bi-pencil text-success"></i> Редактировать регион
+            {% else %}
+                <i class="bi bi-plus-circle text-success"></i> {{ title }}
+            {% endif %}
+        </h1>
+        <p class="text-muted mb-0">
+            {% if region %}
+                Обновите информацию и настройки региона
+            {% else %}
+                Создайте новый регион для организации экстренных бригад
+            {% endif %}
+        </p>
+    </div>
+    <div class="btn-toolbar">
+        <div class="btn-group me-2">
+            {% if region %}
+                <a href="{% url 'teams:region_detail' region.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Назад к региону
+                </a>
+            {% else %}
+                <a href="{% url 'teams:region_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Назад к регионам
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Form -->
+    <div class="col-lg-8">
+        <div class="card form-card">
+            <div class="form-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-geo-alt me-2"></i> Информация о регионе
+                    {% if region %}
+                        <span class="badge bg-light text-success ms-2">{{ region.code }}</span>
+                    {% endif %}
+                </h5>
+                <p class="mb-0 mt-2 opacity-75">
+                    {% if region %}
+                        Обновите данные региона ниже. Изменения будут применены немедленно.
+                    {% else %}
+                        Заполните данные для вашего нового региона.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="post" id="regionForm" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Region Name Section -->
+                    <div class="form-section">
+                        <h6 class="mb-3">
+                            <i class="bi bi-tag text-success me-2"></i> Идентификация региона
+                        </h6>
+
+                        <div class="input-group-custom">
+                            <i class="bi bi-geo-alt input-icon"></i>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.name.errors %}
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div id="nameCounter" class="char-counter text-muted"></div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle text-success"></i>
+                                {{ form.name.help_text }}
+                            </div>
+                        </div>
+
+                        <div class="input-group-custom">
+                            <i class="bi bi-code-square input-icon"></i>
+                            {{ form.code }}
+                            {% if form.code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.code.errors %}
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div id="codeCounter" class="char-counter text-muted"></div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle text-success"></i>
+                                {{ form.code.help_text }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description Section -->
+                    <div class="form-section">
+                        <h6 class="mb-3">
+                            <i class="bi bi-file-text text-success me-2"></i> Описание региона
+                        </h6>
+
+                        <div class="input-group-custom">
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.description.errors %}
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div id="descCounter" class="char-counter text-muted"></div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle text-success"></i>
+                                {{ form.description.help_text }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Region Status (Edit Only) -->
+                    {% if region %}
+                    <div class="form-section">
+                        <h6 class="mb-3">
+                            <i class="bi bi-toggle-on text-success me-2"></i> Статус региона
+                        </h6>
+
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
+                                   {% if region.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                <span id="statusLabel">
+                                    {% if region.is_active %}
+                                        <i class="bi bi-check-circle text-success me-1"></i> Регион активен
+                                    {% else %}
+                                        <i class="bi bi-pause-circle text-warning me-1"></i> Регион неактивен
+                                    {% endif %}
+                                </span>
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle text-success"></i>
+                            <span id="statusHelp">
+                                {% if region.is_active %}
+                                    Активные регионы отображаются при создании бригад и доступны для назначений
+                                {% else %}
+                                    Неактивные регионы скрыты из новых форм, но сохраняют все исторические данные
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Region Preview -->
+                    <div class="region-preview" id="regionPreview" style="display: none;">
+                        <h6 class="mb-2">
+                            <i class="bi bi-eye text-warning me-2"></i> Предпросмотр региона
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="bi bi-geo-alt-fill display-6 text-success"></i>
+                            </div>
+                            <div>
+                                <h5 id="previewName" class="mb-1">Название региона</h5>
+                                <div class="code-preview mb-2" id="previewCode">KOD</div>
+                                <p id="previewDesc" class="mb-0 text-muted small">Описание региона...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        {% if region %}
+                            <a href="{% url 'teams:region_detail' region.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Отмена
+                            </a>
+                        {% else %}
+                            <a href="{% url 'teams:region_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Отмена
+                            </a>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-success btn-create">
+                            {% if region %}
+                                <i class="bi bi-check-circle me-2"></i> Обновить регион
+                            {% else %}
+                                <i class="bi bi-plus-circle me-2"></i> Создать регион
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Current Statistics (Edit Mode) -->
+        {% if region %}
+        <div class="card mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-bar-chart text-success"></i> Текущая статистика
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-primary mb-1">{{ active_team_count|default:0 }}</div>
+                            <div class="small text-muted">Активные бригады</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-success mb-1">{{ team_count|default:0 }}</div>
+                            <div class="small text-muted">Всего бригад</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if team_count > 0 %}
+                <div class="mt-3 text-center">
+                    <a href="{% url 'teams:list' %}?region={{ region.id }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-people"></i> Просмотреть бригады
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <!-- Quick Stats for Create Mode -->
+        <div class="card mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-bar-chart text-success"></i> Обзор системы
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-success mb-1">{{ region_count|default:0 }}</div>
+                            <div class="small text-muted">Существующие регионы</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-primary mb-1">{{ total_teams|default:0 }}</div>
+                            <div class="small text-muted">Всего бригад</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tips and Guidelines -->
+        <div class="tips-card mb-4">
+            <h6 class="mb-3">
+                <i class="bi bi-lightbulb text-warning me-2"></i> Лучшие практики
+            </h6>
+
+            <div class="mb-3">
+                <h6 class="h6">
+                    <i class="bi bi-geo-alt text-success me-2"></i> Название региона
+                </h6>
+                <ul class="small mb-0 list-unstyled">
+                    <li class="mb-1">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Используйте официальные названия
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Указывайте область или район (Нукус, Ходжейли)
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Избегайте сокращений в названии
+                    </li>
+                </ul>
+            </div>
+
+            <div class="mb-3">
+                <h6 class="h6">
+                    <i class="bi bi-code-square text-success me-2"></i> Код региона
+                </h6>
+                <ul class="small mb-0 list-unstyled">
+                    <li class="mb-1">
+                        <i class="bi bi-arrow-right text-muted me-2"></i>
+                        Используйте 2-5 символов
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-arrow-right text-muted me-2"></i>
+                        Только заглавные буквы и цифры
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-arrow-right text-muted me-2"></i>
+                        Примеры: NUK, KHO, URG, TOR
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <h6 class="h6">
+                    <i class="bi bi-file-text text-success me-2"></i> Описание
+                </h6>
+                <ul class="small mb-0 list-unstyled">
+                    <li class="mb-1">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Указывайте географические особенности
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Отмечайте зоны покрытия
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Упомяните крупные населенные пункты
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Support Card -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-question-circle text-info me-2"></i> Нужна помощь?
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="small fw-bold">Примеры регионов:</h6>
+                    <ul class="small list-unstyled">
+                        <li class="mb-2">
+                            <strong>Название:</strong> Нукус<br>
+                            <strong>Код:</strong> NUK<br>
+                            <span class="text-muted">Столица Каракалпакстана, центральный административный район</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Название:</strong> Ходжейли<br>
+                            <strong>Код:</strong> KHO<br>
+                            <span class="text-muted">Ходжейлийский район, северная часть республики</span>
+                        </li>
+                    </ul>
+                </div>
+
+                {% if user.is_staff %}
+                <div class="d-grid">
+                    <a href="/admin/teams/region/" class="btn btn-sm btn-outline-info" target="_blank">
+                        <i class="bi bi-gear"></i> Панель администратора
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('id_name');
+    const codeInput = document.getElementById('id_code');
+    const descInput = document.getElementById('id_description');
+    const form = document.getElementById('regionForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const regionPreview = document.getElementById('regionPreview');
+
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Character counters
+    function updateCharCounter(input, counterId, maxLength) {
+        const counter = document.getElementById(counterId);
+        const currentLength = input.value.length;
+        const remaining = maxLength - currentLength;
+
+        counter.textContent = `${remaining} символов осталось`;
+        counter.className = 'char-counter text-muted';
+
+        if (remaining < 20) {
+            counter.className = 'char-counter warning';
+        }
+        if (remaining < 0) {
+            counter.className = 'char-counter danger';
+        }
+    }
+
+    // Name input handling
+    nameInput.addEventListener('input', function(e) {
+        updateCharCounter(e.target, 'nameCounter', 100);
+        updatePreview();
+        validateField(e.target);
+    });
+
+    // Code input handling
+    codeInput.addEventListener('input', function(e) {
+        // Auto-uppercase
+        e.target.value = e.target.value.toUpperCase();
+        updateCharCounter(e.target, 'codeCounter', 20);
+        updatePreview();
+        validateField(e.target);
+    });
+
+    // Description input handling
+    descInput.addEventListener('input', function(e) {
+        updateCharCounter(e.target, 'descCounter', 500);
+        updatePreview();
+    });
+
+    // Real-time validation
+    function validateField(field) {
+        const value = field.value.trim();
+        let isValid = true;
+        let message = '';
+
+        if (field === nameInput) {
+            if (value.length < 2) {
+                isValid = false;
+                message = 'Название региона должно содержать не менее 2 символов';
+            } else if (value.length > 100) {
+                isValid = false;
+                message = 'Название региона должно быть короче 100 символов';
+            } else if (!/^[a-zA-Zа-яА-Я0-9\s\-]+$/.test(value)) {
+                isValid = false;
+                message = 'Название региона может содержать только буквы, цифры, пробелы и дефисы';
+            }
+        } else if (field === codeInput) {
+            if (value.length < 2) {
+                isValid = false;
+                message = 'Код региона должен содержать не менее 2 символов';
+            } else if (value.length > 20) {
+                isValid = false;
+                message = 'Код региона должен быть короче 20 символов';
+            } else if (!/^[A-Z0-9]+$/.test(value)) {
+                isValid = false;
+                message = 'Код региона может содержать только заглавные буквы и цифры';
+            }
+        }
+
+        // Update visual feedback
+        if (isValid) {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
+        } else {
+            field.classList.remove('is-valid');
+            field.classList.add('is-invalid');
+
+            // Show custom error message
+            let feedback = field.parentNode.querySelector('.custom-feedback');
+            if (!feedback) {
+                feedback = document.createElement('div');
+                feedback.className = 'custom-feedback invalid-feedback d-block';
+                field.parentNode.appendChild(feedback);
+            }
+            feedback.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i>${message}`;
+        }
+
+        return isValid;
+    }
+
+    // Region preview
+    function updatePreview() {
+        const name = nameInput.value.trim();
+        const code = codeInput.value.trim();
+        const desc = descInput.value.trim();
+
+        if (name.length >= 2 && code.length >= 2) {
+            document.getElementById('previewName').textContent = name;
+            document.getElementById('previewCode').textContent = code;
+            document.getElementById('previewDesc').textContent = desc || 'Описание отсутствует';
+            regionPreview.style.display = 'block';
+        } else {
+            regionPreview.style.display = 'none';
+        }
+    }
+
+    {% if region %}
+    // Status toggle handling (edit mode)
+    const statusToggle = document.getElementById('is_active');
+    const statusLabel = document.getElementById('statusLabel');
+    const statusHelp = document.getElementById('statusHelp');
+
+    statusToggle.addEventListener('change', function() {
+        if (this.checked) {
+            statusLabel.innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> Регион активен';
+            statusHelp.textContent = 'Активные регионы отображаются при создании бригад и доступны для назначений';
+        } else {
+            statusLabel.innerHTML = '<i class="bi bi-pause-circle text-warning me-1"></i> Регион неактивен';
+            statusHelp.textContent = 'Неактивные регионы скрыты из новых форм, но сохраняют все исторические данные';
+        }
+    });
+    {% endif %}
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Validate all fields
+        const nameValid = validateField(nameInput);
+        const codeValid = validateField(codeInput);
+        let isFormValid = nameValid && codeValid;
+
+        if (!isFormValid) {
+            showToast('Исправьте ошибки валидации перед отправкой', 'error');
+            return;
+        }
+
+        // Show confirmation
+        const regionName = nameInput.value.trim();
+        const regionCode = codeInput.value.trim();
+        const action = "{% if region %}обновить{% else %}создать{% endif %}";
+        const confirmMsg = `Вы уверены, что хотите ${action} регион "${regionName}" (${regionCode})?`;
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        // Show loading state
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Обработка...';
+        submitBtn.disabled = true;
+
+        // Submit after delay to show loading state
+        setTimeout(() => {
+            form.submit();
+        }, 1000);
+    });
+
+    // Initialize character counters
+    updateCharCounter(nameInput, 'nameCounter', 100);
+    updateCharCounter(codeInput, 'codeCounter', 20);
+    updateCharCounter(descInput, 'descCounter', 500);
+    updatePreview();
+
+    // Auto-focus first field
+    nameInput.focus();
+});
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed top-0 end-0 m-3 fade show`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'}-fill me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 150);
+    }, 4000);
+}
+</script>
+{% endblock %}

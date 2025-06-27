@@ -47,10 +47,135 @@
         border-radius: 16px 16px 0 0;
         padding: 1.5rem;
     }
+
+    .region-info {
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .region-code {
+        font-family: 'Courier New', monospace;
+        font-weight: 700;
+        background: rgba(255,255,255,0.2);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .breadcrumb-custom {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb-custom .breadcrumb {
+        margin: 0;
+        background: none;
+        padding: 0;
+    }
+
+    .timeline-item {
+        border-left: 2px solid #e9ecef;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #6c757d;
+    }
+
+    .timeline-item.success::before {
+        background: #198754;
+    }
+
+    .timeline-item.warning::before {
+        background: #ffc107;
+    }
+
+    .timeline-item.danger::before {
+        background: #dc3545;
+    }
+
+    .confirmation-input {
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+    }
+
+    .confirmation-input:focus {
+        background: #fff;
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .impact-indicator {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+
+    .impact-indicator.high {
+        background: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
+    }
+
+    .impact-indicator.medium {
+        background: #fff3cd;
+        border-color: #ffc107;
+        color: #856404;
+    }
+
+    .impact-indicator.low {
+        background: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Breadcrumb -->
+<div class="breadcrumb-custom">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'teams:list' %}" class="text-decoration-none">
+                    <i class="bi bi-people me-1"></i>Бригады
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'teams:region_detail' team.region.pk %}" class="text-decoration-none">
+                    <i class="bi bi-geo-alt me-1"></i>{{ team.region.name }}
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'teams:detail' team.pk %}" class="text-decoration-none">{{ team.name }}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Управление</li>
+        </ol>
+    </nav>
+</div>
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
     <div>
         <h1 class="h2 mb-1">
@@ -76,7 +201,22 @@
                     </div>
                     <div>
                         <h3 class="mb-1">{{ team.name }}</h3>
-                        <p class="mb-2 opacity-75">{{ team.description|default:"Описание отсутствует" }}</p>
+
+                        <!-- Region Information -->
+                        <div class="region-info">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-geo-alt-fill me-2"></i>
+                                <div>
+                                    <div class="fw-semibold">{{ team.region.name }}</div>
+                                    <div class="region-code">{{ team.region.code }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if team.description %}
+                        <p class="mb-2 opacity-75">{{ team.description }}</p>
+                        {% endif %}
+
                         <div class="d-flex align-items-center">
                             <span class="badge {% if team.is_active %}bg-success{% else %}bg-warning text-dark{% endif %} me-3">
                                 {% if team.is_active %}Активна{% else %}Неактивна{% endif %}
@@ -100,28 +240,48 @@
                 Эта бригада участвовала в операциях обратного вызова и содержит важные данные.
             </p>
 
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="impact-card text-center">
-                        <div class="impact-number text-primary">{{ callback_count }}</div>
-                        <div class="small text-muted">Всего вызовов</div>
-                    </div>
+            <!-- Impact Statistics -->
+            <div class="stats-grid">
+                <div class="impact-indicator {% if callback_count > 50 %}high{% elif callback_count > 10 %}medium{% else %}low{% endif %}">
+                    <div class="impact-number text-primary">{{ callback_count }}</div>
+                    <div class="small">Всего вызовов</div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="impact-card text-center">
-                        <div class="impact-number text-warning">{{ rating_count }}</div>
-                        <div class="small text-muted">Получено оценок</div>
-                    </div>
+                <div class="impact-indicator {% if rating_count > 20 %}high{% elif rating_count > 5 %}medium{% else %}low{% endif %}">
+                    <div class="impact-number text-warning">{{ rating_count }}</div>
+                    <div class="small">Получено оценок</div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="impact-card text-center">
-                        <div class="impact-number text-info">{{ recent_callbacks }}</div>
-                        <div class="small text-muted">Недавние (30 дней)</div>
-                    </div>
+                <div class="impact-indicator {% if recent_callbacks > 10 %}high{% elif recent_callbacks > 3 %}medium{% else %}low{% endif %}">
+                    <div class="impact-number text-info">{{ recent_callbacks }}</div>
+                    <div class="small">Недавние (30 дней)</div>
                 </div>
             </div>
+
+            <!-- Impact Timeline -->
+            {% if callback_count > 0 %}
+            <div class="mt-4">
+                <h6 class="mb-3">История активности:</h6>
+                <div class="timeline-item success">
+                    <strong>{{ team.created_at|date:"d M, Y" }}</strong> - Бригада создана
+                </div>
+                {% if callback_count > 0 %}
+                <div class="timeline-item success">
+                    <strong>Обработано {{ callback_count }} вызов{{ callback_count|pluralize:",а,ов" }}</strong> с момента создания
+                </div>
+                {% endif %}
+                {% if rating_count > 0 %}
+                <div class="timeline-item warning">
+                    <strong>Получено {{ rating_count }} оцен{{ rating_count|pluralize:"ка,ки,ок" }}</strong> от пользователей
+                </div>
+                {% endif %}
+                {% if recent_callbacks > 0 %}
+                <div class="timeline-item danger">
+                    <strong>{{ recent_callbacks }} активн{{ recent_callbacks|pluralize:"ый,ых,ых" }} вызов{{ recent_callbacks|pluralize:",а,ов" }}</strong> за последние 30 дней
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
 
         <!-- Recommended Action -->
@@ -141,11 +301,12 @@
                         <li>Сохранению всех исторических данных и статистики</li>
                         <li>Возможности повторной активации бригады при необходимости</li>
                         <li>Поддержанию целостности данных для отчетности</li>
+                        <li>Сохранению связи с регионом {{ team.region.name }}</li>
                     </ul>
-                    <p class="text-success">
-                        <i class="bi bi-check-circle me-1"></i>
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
                         <strong>Это наиболее безопасный вариант, который можно отменить.</strong>
-                    </p>
+                    </div>
                 </div>
                 <div class="col-md-4 text-center">
                     <form method="post" style="display: inline;">
@@ -156,6 +317,37 @@
                         </button>
                     </form>
                     <div class="small text-muted mt-2">Безопасно и обратимо</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alternative Actions -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-gear text-secondary me-2"></i> Альтернативные действия
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-pencil text-primary me-2"></i> Редактирование</h6>
+                        <p class="small text-muted mb-2">
+                            Измените название, описание или регион бригады вместо удаления.
+                        </p>
+                        <a href="{% url 'teams:edit' team.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Редактировать бригаду
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-arrow-repeat text-info me-2"></i> Перемещение региона</h6>
+                        <p class="small text-muted mb-2">
+                            Переместите бригаду в другой регион, если структура изменилась.
+                        </p>
+                        <a href="{% url 'teams:edit' team.pk %}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-geo-alt"></i> Изменить регион
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -175,13 +367,17 @@
                     </p>
                     <ul class="mb-3">
                         <li class="text-danger">Полному удалению бригады из базы данных</li>
-                        <li class="text-danger">Удалению всех связанных записей вызовов</li>
-                        <li class="text-danger">Удалению всех данных об оценках для этой бригады</li>
+                        <li class="text-danger">Удалению всех связанных записей вызовов ({{ callback_count }})</li>
+                        <li class="text-danger">Удалению всех данных об оценках ({{ rating_count }})</li>
                         <li class="text-danger">Нарушению исторических отчетов и аналитики</li>
+                        <li class="text-danger">Потере связи с регионом {{ team.region.name }}</li>
                     </ul>
                     <div class="alert alert-danger">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         <strong>Это действие необратимо!</strong>
+                        {% if recent_callbacks > 0 %}
+                        <br>У бригады есть {{ recent_callbacks }} недавн{{ recent_callbacks|pluralize:"ий,их,их" }} вызов{{ recent_callbacks|pluralize:",а,ов" }}!
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-md-4 text-center">
@@ -211,6 +407,7 @@
                                 <li><strong>Удаление:</strong> Все данные безвозвратно теряются</li>
                                 <li>Записи вызовов содержат ссылки на бригаду</li>
                                 <li>Оценки связаны с эффективностью бригады</li>
+                                <li>Статистика региона будет пересчитана</li>
                             </ul>
                         </div>
 
@@ -220,7 +417,8 @@
                                 <li>Всегда создавайте резервные копии данных перед удалением</li>
                                 <li>Экспортируйте статистику бригады для хранения</li>
                                 <li>Рассмотрите деактивацию вместо удаления</li>
-                                <li>Уведомляйте соответствующий персонал об изменениях в бригаде</li>
+                                <li>Уведомляйте соответствующий персонал об изменениях</li>
+                                <li>Проверьте наличие активных вызовов</li>
                             </ul>
                         </div>
                     </div>
@@ -228,9 +426,20 @@
                     {% if callback_count > 0 %}
                     <div class="alert alert-info mt-3">
                         <i class="bi bi-info-circle me-2"></i>
-                        Эта бригада имеет <strong>{{ callback_count }} запись{{ callback_count|pluralize:",и,ей" }} вызовов</strong>.
+                        Эта бригада имеет <strong>{{ callback_count }} запис{{ callback_count|pluralize:"ь,и,ей" }} вызовов</strong>
+                        {% if rating_count > 0 %}
+                        и <strong>{{ rating_count }} оцен{{ rating_count|pluralize:"ку,ки,ок" }}</strong>
+                        {% endif %}.
                         Рекомендуется <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="alert-link">просмотреть эти записи</a>
                         перед внесением изменений.
+                    </div>
+                    {% endif %}
+
+                    {% if team.region %}
+                    <div class="alert alert-success mt-3">
+                        <i class="bi bi-geo-alt me-2"></i>
+                        Эта бригада является частью региона <strong>{{ team.region.name }}</strong>.
+                        <a href="{% url 'teams:region_detail' team.region.pk %}" class="alert-link">Просмотреть другие бригады региона</a>
                     </div>
                     {% endif %}
                 </div>
@@ -253,6 +462,7 @@
                     <li>Реорганизация структуры экстренного реагирования</li>
                     <li>Изменения в оборудовании или персонале</li>
                     <li>Сезонная или временная приостановка</li>
+                    <li>Слияние с другой бригадой</li>
                 </ul>
 
                 <h6>Когда удалять:</h6>
@@ -261,6 +471,7 @@
                     <li>Дублирующиеся записи бригад</li>
                     <li>Очистка тестовых данных</li>
                     <li>Крупная реструктуризация системы</li>
+                    <li>Бригада не имеет важных исторических данных</li>
                 </ul>
 
                 <div class="alert alert-warning">
@@ -290,6 +501,47 @@
                     <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-list me-2"></i> Просмотреть вызовы бригады
                     </a>
+
+                    {% if rating_count > 0 %}
+                    <a href="{% url 'callbacks:ratings' %}?team={{ team.id }}" class="btn btn-sm btn-outline-warning">
+                        <i class="bi bi-star me-2"></i> Просмотреть оценки
+                    </a>
+                    {% endif %}
+
+                    <a href="{% url 'teams:region_detail' team.region.pk %}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-geo-alt me-2"></i> Регион {{ team.region.code }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Card -->
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-bar-chart text-primary me-2"></i> Краткая статистика
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2 text-center">
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <div class="fw-bold text-primary">{{ callback_count }}</div>
+                            <small class="text-muted">Вызовы</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <div class="fw-bold text-warning">{{ rating_count }}</div>
+                            <small class="text-muted">Оценки</small>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="border rounded p-2">
+                            <div class="fw-bold text-info">{{ recent_callbacks }}</div>
+                            <small class="text-muted">Недавние вызовы (30 дней)</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -298,7 +550,7 @@
 
 <!-- Confirmation Modal -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title">
@@ -312,23 +564,49 @@
                 </div>
 
                 <h6>Вы абсолютно уверены?</h6>
-                <p>Это действие безвозвратно удалит бригаду <strong>"{{ team.name }}"</strong> и:</p>
+                <p>Это действие безвозвратно удалит бригаду <strong>"{{ team.name }}"</strong> из региона <strong>{{ team.region.name }}</strong> и:</p>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4 text-center">
+                        <div class="border border-danger rounded p-2 bg-light">
+                            <div class="h5 text-danger mb-1">{{ callback_count }}</div>
+                            <small class="text-muted">записей вызовов</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="border border-danger rounded p-2 bg-light">
+                            <div class="h5 text-danger mb-1">{{ rating_count }}</div>
+                            <small class="text-muted">оценок</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="border border-danger rounded p-2 bg-light">
+                            <div class="h5 text-danger mb-1">∞</div>
+                            <small class="text-muted">исторических данных</small>
+                        </div>
+                    </div>
+                </div>
 
                 <ul class="text-danger">
-                    <li>Удалит {{ callback_count }} запись{{ callback_count|pluralize:",и,ей" }} вызовов</li>
-                    <li>Удалит {{ rating_count }} оцен{{ rating_count|pluralize:"ку,ки,ок" }}</li>
                     <li>Нарушит исторические отчеты</li>
-                    <li>Нельзя отменить</li>
+                    <li>Удалит все связанные аналитические данные</li>
+                    <li>Невозможно будет восстановить</li>
+                    <li>Повлияет на статистику региона {{ team.region.name }}</li>
                 </ul>
 
                 <div class="alert alert-danger">
                     <strong>Введите название бригады для подтверждения:</strong>
-                    <input type="text" id="confirmTeamName" class="form-control mt-2"
+                    <input type="text" id="confirmTeamName" class="form-control mt-2 confirmation-input"
                            placeholder="Введите название бригады: {{ team.name }}">
+                    <small class="form-text text-muted mt-1">
+                        Название должно точно совпадать (с учетом регистра)
+                    </small>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Отмена
+                </button>
                 <form method="post" style="display: inline;">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="delete">
@@ -357,18 +635,24 @@ function exportTeamData() {
             created_at: "{{ team.created_at|date:'c' }}",
             created_by: "{{ team.created_by.username|escapejs }}"
         },
+        region: {
+            id: {{ team.region.id }},
+            name: "{{ team.region.name|escapejs }}",
+            code: "{{ team.region.code|escapejs }}"
+        },
         statistics: {
             callback_count: {{ callback_count }},
             rating_count: {{ rating_count }},
             recent_callbacks: {{ recent_callbacks }}
         },
-        export_timestamp: new Date().toISOString()
+        export_timestamp: new Date().toISOString(),
+        export_reason: "backup_before_deletion"
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(teamData, null, 2));
     const downloadLink = document.createElement('a');
     downloadLink.href = dataStr;
-    downloadLink.download = 'brigada_{{ team.id }}_backup.json';
+    downloadLink.download = 'team_{{ team.id }}_{{ team.region.code }}_backup.json';
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
@@ -385,11 +669,20 @@ document.getElementById('confirmTeamName').addEventListener('input', function(e)
         confirmBtn.disabled = false;
         confirmBtn.classList.remove('btn-outline-danger');
         confirmBtn.classList.add('btn-danger');
+        e.target.classList.remove('confirmation-input');
+        e.target.classList.add('is-valid');
     } else {
         confirmBtn.disabled = true;
         confirmBtn.classList.remove('btn-danger');
         confirmBtn.classList.add('btn-outline-danger');
+        e.target.classList.remove('is-valid');
+        e.target.classList.add('confirmation-input');
     }
+});
+
+// Auto-focus confirmation input when modal opens
+document.getElementById('deleteConfirmModal').addEventListener('shown.bs.modal', function () {
+    document.getElementById('confirmTeamName').focus();
 });
 
 // Show toast notification
@@ -424,9 +717,57 @@ document.querySelectorAll('form').forEach(form => {
             const confirmed = confirm('Вы уверены, что хотите деактивировать эту бригаду? Это скроет ее из новых форм обратного вызова, но сохранит все данные.');
             if (!confirmed) {
                 e.preventDefault();
+                return;
             }
+        }
+
+        // Show loading state for deactivation
+        if (action === 'deactivate') {
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Деактивация...';
+            btn.disabled = true;
         }
     });
 });
+
+// Animate impact indicators on load
+document.addEventListener('DOMContentLoaded', function() {
+    const indicators = document.querySelectorAll('.impact-indicator');
+    indicators.forEach((indicator, index) => {
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            indicator.style.transition = 'all 0.3s ease';
+            indicator.style.opacity = '1';
+            indicator.style.transform = 'translateY(0)';
+        }, index * 200);
+    });
+});
+
+// Warning animation for high-impact operations
+function animateWarning() {
+    const warningElements = document.querySelectorAll('.text-danger, .impact-indicator.high');
+    warningElements.forEach(element => {
+        element.style.animation = 'pulse 2s infinite';
+    });
+}
+
+// Add pulse animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+`;
+document.head.appendChild(style);
+
+// Auto-animate warnings for high-impact teams
+{% if callback_count > 50 or recent_callbacks > 10 %}
+setTimeout(animateWarning, 1000);
+{% endif %}
 </script>
 {% endblock %}

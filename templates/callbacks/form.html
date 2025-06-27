@@ -2,261 +2,70 @@
 
 {% block title %}{{ title }} - Система экстренного обратного вызова{% endblock %}
 
-{% block extra_css %}
-<style>
-    .form-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: none;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        border-radius: 16px;
-    }
-
-    .form-header {
-        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
-        color: white;
-        border-radius: 16px 16px 0 0;
-        padding: 1.5rem;
-    }
-
-    .form-section {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        border: 1px solid #e9ecef;
-    }
-
-    .input-group-custom {
-        position: relative;
-        margin-bottom: 1rem;
-    }
-
-    .input-group-custom .form-control,
-    .input-group-custom .form-select {
-        padding-left: 3rem;
-        border-radius: 8px;
-        border: 2px solid #e9ecef;
-        transition: all 0.3s ease;
-    }
-
-    .input-group-custom .form-control:focus,
-    .input-group-custom .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-
-    .input-icon {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #6c757d;
-        z-index: 10;
-        font-size: 1.1rem;
-    }
-
-    .stats-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 12px;
-        padding: 1rem;
-        text-align: center;
-        height: 100%;
-        border: 1px solid #dee2e6;
-    }
-
-    .tips-card {
-        background: linear-gradient(135deg, #e7f3ff 0%, #cfe7ff 100%);
-        border: 1px solid #b3d9ff;
-        border-radius: 12px;
-        padding: 1.5rem;
-    }
-
-    .validation-feedback {
-        font-size: 0.875rem;
-        margin-top: 0.5rem;
-    }
-
-    .phone-preview {
-        font-family: 'Courier New', monospace;
-        font-weight: bold;
-        color: #0d6efd;
-    }
-
-    .btn-create {
-        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
-        border: none;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-
-    .btn-create:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(25, 135, 84, 0.3);
-    }
-
-    .process-info {
-        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-        border: 1px solid #ffdf9a;
-        border-radius: 12px;
-        padding: 1.5rem;
-    }
-
-    @media (max-width: 768px) {
-        .form-card {
-            margin: 0 0.5rem;
-        }
-
-        .input-group-custom .form-control,
-        .input-group-custom .form-select {
-            padding-left: 2.5rem;
-        }
-
-        .input-icon {
-            left: 0.75rem;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+<div class="page-header">
     <div>
-        <h1 class="h2 mb-1">
-            <i class="bi bi-plus-circle text-success"></i> {{ title }}
-        </h1>
-        <p class="text-muted mb-0">Создать новый запрос экстренного обратного вызова для обратной связи с пациентом</p>
+        <h1><i class="bi bi-plus-circle text-success"></i> {{ title }}</h1>
+        <p class="text-muted mb-0">Создать новый запрос экстренного обратного вызова</p>
     </div>
-    <div class="btn-toolbar">
-        <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Назад к списку
-        </a>
-    </div>
+    <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Назад
+    </a>
 </div>
 
 <div class="row g-4">
-    <!-- Main Form -->
+    <!-- Form -->
     <div class="col-lg-8">
-        <div class="card form-card">
-            <div class="form-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-telephone-plus me-2"></i>Детали запроса обратного вызова
-                </h5>
-                <p class="mb-0 mt-2 opacity-75">Заполните контактную информацию пациента и выберите экстренную бригаду</p>
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="bi bi-telephone-plus"></i> Детали запроса</h6>
             </div>
-
-            <div class="card-body p-4">
-                <form method="post" id="callbackForm" novalidate>
+            <div class="card-body">
+                <form method="post" id="callbackForm">
                     {% csrf_token %}
 
-                    <!-- Phone Number Section -->
-                    <div class="form-section">
-                        <h6 class="mb-3">
-                            <i class="bi bi-telephone text-primary me-2"></i>Контактная информация
-                        </h6>
-
-                        <div class="input-group-custom">
-                            <i class="bi bi-telephone input-icon"></i>
-                            {{ form.phone_number }}
-                            {% if form.phone_number.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in form.phone_number.errors %}
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">
-                                <i class="bi bi-info-circle text-primary"></i>
-                                {{ form.phone_number.help_text }}
+                    <div class="mb-3">
+                        <label for="id_phone_number" class="form-label fw-semibold">
+                            <i class="bi bi-telephone text-primary"></i> Номер телефона
+                        </label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.phone_number.errors %}{{ error }}{% endfor %}
                             </div>
-                        </div>
-
-                        <!-- Phone Preview -->
-                        <div class="phone-preview-container" style="display: none;">
-                            <div class="alert alert-info">
-                                <i class="bi bi-eye me-2"></i>
-                                <strong>Предпросмотр:</strong> <span class="phone-preview" id="phonePreview"></span>
-                            </div>
-                        </div>
+                        {% endif %}
+                        <div class="form-text">{{ form.phone_number.help_text }}</div>
                     </div>
 
-                    <!-- Team Selection Section -->
-                    <div class="form-section">
-                        <h6 class="mb-3">
-                            <i class="bi bi-people text-primary me-2"></i>Экстренная бригада
-                        </h6>
-
-                        <div class="input-group-custom">
-                            <i class="bi bi-people input-icon"></i>
-                            {{ form.team }}
-                            {% if form.team.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in form.team.errors %}
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">
-                                <i class="bi bi-info-circle text-primary"></i>
-                                {{ form.team.help_text }}
+                    <div class="mb-3">
+                        <label for="id_team" class="form-label fw-semibold">
+                            <i class="bi bi-people text-primary"></i> Экстренная бригада
+                        </label>
+                        {{ form.team }}
+                        {% if form.team.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.team.errors %}{{ error }}{% endfor %}
                             </div>
-                        </div>
+                        {% endif %}
+                        <div class="form-text">{{ form.team.help_text }}</div>
                     </div>
 
-                    <!-- Process Information -->
-                    <div class="process-info">
-                        <h6 class="mb-3">
-                            <i class="bi bi-info-circle text-warning me-2"></i>Что происходит дальше?
-                        </h6>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="badge bg-primary me-3 mt-1">1</div>
-                                    <div>
-                                        <strong>Автоматический вызов</strong>
-                                        <p class="mb-0 small text-muted">Система немедленно звонит пациенту</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="badge bg-primary me-3 mt-1">2</div>
-                                    <div>
-                                        <strong>Оценка обслуживания</strong>
-                                        <p class="mb-0 small text-muted">Пациент оценивает качество обслуживания (1-5 звезд)</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="badge bg-primary me-3 mt-1">3</div>
-                                    <div>
-                                        <strong>Дополнительная поддержка</strong>
-                                        <p class="mb-0 small text-muted">Возможность перевода на оператора</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="badge bg-primary me-3 mt-1">4</div>
-                                    <div>
-                                        <strong>Анализ качества</strong>
-                                        <p class="mb-0 small text-muted">Оценка сохраняется для улучшения обслуживания</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Что происходит дальше?</h6>
+                        <ol class="mb-0 small">
+                            <li>Система автоматически звонит пациенту</li>
+                            <li>Пациент оценивает качество обслуживания (1-5 звезд)</li>
+                            <li>Возможность перевода на оператора при необходимости</li>
+                            <li>Данные сохраняются для анализа качества</li>
+                        </ol>
                     </div>
 
-                    <!-- Form Actions -->
-                    <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="d-flex justify-content-between">
                         <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i> Отмена
                         </a>
-                        <button type="submit" class="btn btn-success btn-create">
-                            <i class="bi bi-telephone-outbound me-2"></i>Создать запрос обратного вызова
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-telephone-outbound"></i> Создать запрос
                         </button>
                     </div>
                 </form>
@@ -266,311 +75,108 @@
 
     <!-- Sidebar -->
     <div class="col-lg-4">
-        <!-- Quick Stats -->
+        <!-- Today's Stats -->
         <div class="card mb-4">
-            <div class="card-header bg-transparent border-0">
-                <h6 class="card-title mb-0">
-                    <i class="bi bi-bar-chart text-primary"></i> Сегодняшняя активность
-                </h6>
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-bar-chart text-info"></i> Сегодня</h6>
             </div>
             <div class="card-body">
-                <div class="row g-3">
+                <div class="row g-3 text-center">
                     <div class="col-6">
-                        <div class="stats-card">
-                            <div class="h4 text-primary mb-1">{{ today_calls|default:0 }}</div>
-                            <div class="small text-muted">Создано вызовов</div>
-                        </div>
+                        <div class="h4 text-primary">{{ today_calls|default:0 }}</div>
+                        <div class="small text-muted">Вызовов</div>
                     </div>
                     <div class="col-6">
-                        <div class="stats-card">
-                            <div class="h4 text-success mb-1">{{ today_completed|default:0 }}</div>
-                            <div class="small text-muted">Завершено</div>
-                        </div>
+                        <div class="h4 text-success">{{ today_completed|default:0 }}</div>
+                        <div class="small text-muted">Завершено</div>
                     </div>
                     <div class="col-6">
-                        <div class="stats-card">
-                            <div class="h4 text-warning mb-1">{{ today_ratings|default:0 }}</div>
-                            <div class="small text-muted">Оценки</div>
-                        </div>
+                        <div class="h4 text-warning">{{ today_ratings|default:0 }}</div>
+                        <div class="small text-muted">Оценок</div>
                     </div>
                     <div class="col-6">
-                        <div class="stats-card">
-                            <div class="h4 text-info mb-1">{{ today_success_rate|default:0 }}%</div>
-                            <div class="small text-muted">Процент успешных</div>
-                        </div>
+                        <div class="h4 text-info">{{ today_success_rate|default:0 }}%</div>
+                        <div class="small text-muted">Успешность</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Tips and Guidelines -->
-        <div class="tips-card mb-4">
-            <h6 class="mb-3">
-                <i class="bi bi-lightbulb text-warning me-2"></i>Лучшие практики
-            </h6>
-
-            <div class="mb-3">
-                <h6 class="h6">
-                    <i class="bi bi-telephone text-primary me-2"></i>Телефонные номера
-                </h6>
-                <ul class="small mb-0 list-unstyled">
-                    <li class="mb-1">
-                        <i class="bi bi-check-circle text-success me-2"></i>
-                        Указывайте код страны (+998 для Узбекистана)
-                    </li>
-                    <li class="mb-1">
-                        <i class="bi bi-check-circle text-success me-2"></i>
-                        Проверяйте номер перед отправкой
-                    </li>
-                    <li class="mb-1">
-                        <i class="bi bi-check-circle text-success me-2"></i>
-                        Мобильные номера предпочтительны
-                    </li>
-                </ul>
-            </div>
-
-            <div class="mb-3">
-                <h6 class="h6">
-                    <i class="bi bi-clock text-primary me-2"></i>Оптимальное время звонков
-                </h6>
-                <ul class="small mb-0 list-unstyled">
-                    <li class="mb-1">
-                        <i class="bi bi-sun text-warning me-2"></i>
-                        Будни: с 9:00 до 18:00
-                    </li>
-                    <li class="mb-1">
-                        <i class="bi bi-moon text-secondary me-2"></i>
-                        Избегайте раннего утра и позднего вечера
-                    </li>
-                    <li class="mb-1">
-                        <i class="bi bi-heart-pulse text-danger me-2"></i>
-                        Учитывайте время восстановления пациента
-                    </li>
-                </ul>
-            </div>
-
-            <div>
-                <h6 class="h6">
-                    <i class="bi bi-star text-warning me-2"></i>Система оценок
-                </h6>
-                <ul class="small mb-0 list-unstyled">
-                    <li class="mb-1">⭐ Очень плохое обслуживание</li>
-                    <li class="mb-1">⭐⭐ Плохое обслуживание</li>
-                    <li class="mb-1">⭐⭐⭐ Среднее обслуживание</li>
-                    <li class="mb-1">⭐⭐⭐⭐ Хорошее обслуживание</li>
-                    <li class="mb-1">⭐⭐⭐⭐⭐ Отличное обслуживание</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Support Card -->
+        <!-- Tips -->
         <div class="card">
-            <div class="card-header bg-light">
-                <h6 class="card-title mb-0">
-                    <i class="bi bi-question-circle text-info me-2"></i>Нужна помощь?
-                </h6>
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-lightbulb text-warning"></i> Рекомендации</h6>
             </div>
             <div class="card-body">
-                <p class="small mb-3">Если возникли проблемы:</p>
-                <ul class="small list-unstyled">
-                    <li class="mb-2">
-                        <i class="bi bi-check text-success me-2"></i>
-                        Проверьте формат номера телефона
-                    </li>
-                    <li class="mb-2">
-                        <i class="bi bi-check text-success me-2"></i>
-                        Убедитесь, что выбрана экстренная бригада
-                    </li>
-                    <li class="mb-2">
-                        <i class="bi bi-check text-success me-2"></i>
-                        Свяжитесь с системным администратором
-                    </li>
-                </ul>
-                {% if user.is_staff %}
-                <div class="d-grid">
-                    <a href="/admin/callbacks/callbackrequest/" class="btn btn-sm btn-outline-info" target="_blank">
-                        <i class="bi bi-gear"></i> Панель администратора
-                    </a>
+                <div class="mb-3">
+                    <h6 class="small fw-semibold">Телефонные номера:</h6>
+                    <ul class="small list-unstyled">
+                        <li><i class="bi bi-check text-success"></i> Указывайте код страны (+998)</li>
+                        <li><i class="bi bi-check text-success"></i> Проверяйте номер перед отправкой</li>
+                        <li><i class="bi bi-check text-success"></i> Предпочтительны мобильные номера</li>
+                    </ul>
                 </div>
-                {% endif %}
+
+                <div class="mb-3">
+                    <h6 class="small fw-semibold">Оптимальное время:</h6>
+                    <ul class="small list-unstyled">
+                        <li><i class="bi bi-sun text-warning"></i> Будни: 9:00-18:00</li>
+                        <li><i class="bi bi-moon text-secondary"></i> Избегайте раннего утра</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h6 class="small fw-semibold">Система оценок:</h6>
+                    <div class="small">
+                        <div>⭐ - Очень плохо</div>
+                        <div>⭐⭐⭐ - Средне</div>
+                        <div>⭐⭐⭐⭐⭐ - Отлично</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+{% block extra_js %}
 <script>
-// Enhanced phone number formatting and validation
-document.addEventListener('DOMContentLoaded', function() {
-    const phoneInput = document.getElementById('id_phone_number');
-    const phonePreviewContainer = document.querySelector('.phone-preview-container');
-    const phonePreview = document.getElementById('phonePreview');
-    const form = document.getElementById('callbackForm');
-    const submitBtn = form.querySelector('button[type="submit"]');
+document.getElementById('callbackForm').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
+    const phone = document.getElementById('id_phone_number').value.trim();
+    const team = document.getElementById('id_team').value;
+    const submitBtn = this.querySelector('button[type="submit"]');
 
-    // Phone number formatting and preview
-    phoneInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/[^\d+]/g, ''); // Keep only digits and +
-
-        // Auto-format for Uzbekistan numbers
-        if (value.startsWith('9') && value.length === 9) {
-            value = '998' + value;
-        } else if (value.startsWith('98') && value.length === 11) {
-            value = '9' + value;
-        }
-
-        e.target.value = value;
-
-        // Show preview if valid length
-        if (value.length >= 9) {
-            phonePreview.textContent = formatPhoneDisplay(value);
-            phonePreviewContainer.style.display = 'block';
-        } else {
-            phonePreviewContainer.style.display = 'none';
-        }
-
-        // Real-time validation feedback
-        validatePhoneNumber(value);
-    });
-
-    // Real-time phone validation
-    function validatePhoneNumber(phone) {
-        const feedback = phoneInput.parentNode.querySelector('.invalid-feedback');
-        let isValid = true;
-        let message = '';
-
-        if (phone.length < 9) {
-            isValid = false;
-            message = 'Номер телефона слишком короткий (минимум 9 цифр)';
-        } else if (phone.length > 15) {
-            isValid = false;
-            message = 'Номер телефона слишком длинный (максимум 15 цифр)';
-        } else if (phone.replace(/[^\d]/g, '').length < 9) {
-            isValid = false;
-            message = 'Введите действительный номер телефона';
-        }
-
-        // Update visual feedback
-        if (isValid) {
-            phoneInput.classList.remove('is-invalid');
-            phoneInput.classList.add('is-valid');
-            if (feedback) feedback.style.display = 'none';
-        } else {
-            phoneInput.classList.remove('is-valid');
-            phoneInput.classList.add('is-invalid');
-            if (feedback) {
-                feedback.textContent = message;
-                feedback.style.display = 'block';
-            }
-        }
-
-        return isValid;
+    // Basic validation
+    if (!phone || !team) {
+        App.toast('Заполните все обязательные поля', 'error');
+        return;
     }
 
-    // Format phone number for display
-    function formatPhoneDisplay(phone) {
-        if (phone.startsWith('998') && phone.length === 12) {
-            return `+998 (${phone.substr(3, 2)}) ${phone.substr(5, 3)}-${phone.substr(8, 2)}-${phone.substr(10, 2)}`;
-        }
-        return phone;
+    // Confirmation
+    const teamName = document.getElementById('id_team').selectedOptions[0].text;
+    if (!confirm(`Создать запрос для ${phone}?\nБригада: ${teamName}\n\nСистема немедленно позвонит по этому номеру.`)) {
+        return;
     }
 
-    // Enhanced form validation
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const phoneNumber = phoneInput.value.trim();
-        const team = document.getElementById('id_team').value;
-        let isValid = true;
-
-        // Validate phone number
-        if (!validatePhoneNumber(phoneNumber)) {
-            isValid = false;
-        }
-
-        // Validate team selection
-        if (!team) {
-            const teamSelect = document.getElementById('id_team');
-            teamSelect.classList.add('is-invalid');
-            showToast('Пожалуйста, выберите экстренную бригаду', 'error');
-            isValid = false;
-        } else {
-            document.getElementById('id_team').classList.remove('is-invalid');
-        }
-
-        if (!isValid) {
-            return;
-        }
-
-        // Show confirmation dialog
-        const teamName = document.getElementById('id_team').selectedOptions[0].text;
-        const confirmMsg = `Создать запрос обратного вызова для:\n\nТелефон: ${formatPhoneDisplay(phoneNumber)}\nБригада: ${teamName}\n\nСистема немедленно позвонит по этому номеру. Продолжить?`;
-
-        if (!confirm(confirmMsg)) {
-            return;
-        }
-
-        // Show loading state
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Создание запроса...';
-        submitBtn.disabled = true;
-
-        // Add loading overlay
-        const overlay = document.createElement('div');
-        overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
-        overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
-        overlay.style.zIndex = '9999';
-        overlay.innerHTML = `
-            <div class="text-center">
-                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-                <h5>Создание запроса обратного вызова...</h5>
-                <p class="text-muted">Пожалуйста, подождите, пока мы обрабатываем ваш запрос</p>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-
-        // Simulate processing time, then submit
-        setTimeout(() => {
-            form.submit();
-        }, 1500);
-    });
-
-    // Team selection enhancement
-    document.getElementById('id_team').addEventListener('change', function() {
-        this.classList.remove('is-invalid');
-        if (this.value) {
-            this.classList.add('is-valid');
-        } else {
-            this.classList.remove('is-valid');
-        }
-    });
-
-    // Auto-focus first field
-    phoneInput.focus();
-});
-
-// Utility function for showing toasts
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed top-0 end-0 m-3 fade show`;
-    toast.style.zIndex = '9999';
-    toast.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="bi bi-${type === 'error' ? 'exclamation-triangle' : 'info-circle'}-fill me-2"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    document.body.appendChild(toast);
+    App.loading(submitBtn, true);
 
     setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => document.body.removeChild(toast), 150);
-    }, 4000);
-}
+        this.submit();
+    }, 1000);
+});
+
+// Phone number formatting
+document.getElementById('id_phone_number').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/[^\d+]/g, '');
+
+    // Auto-format Uzbekistan numbers
+    if (value.startsWith('9') && value.length === 9) {
+        value = '998' + value;
+    }
+
+    e.target.value = value;
+});
 </script>
+{% endblock %}
 {% endblock %}

@@ -2,110 +2,64 @@
 
 {% block title %}Обратные вызовы - Система экстренного обратного вызова{% endblock %}
 
-{% block extra_css %}
-<style>
-    .filter-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border: none;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-
-    .status-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 8px;
-    }
-
-    .phone-number {
-        font-family: 'Courier New', monospace;
-        font-weight: 600;
-    }
-
-    .call-duration {
-        font-size: 0.85em;
-        color: #6c757d;
-    }
-
-    .table-actions .btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-
-    .stats-bar {
-        background: linear-gradient(90deg, #e9ecef 0%, #f8f9fa 100%);
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .animate-pulse {
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.7; }
-        100% { opacity: 1; }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+<div class="page-header">
     <div>
-        <h1 class="h2 mb-1">
-            <i class="bi bi-telephone text-primary"></i> Запросы обратного вызова
-        </h1>
-        <p class="text-muted mb-0">Управление и мониторинг запросов экстренного обратного вызова</p>
+        <h1><i class="bi bi-telephone text-primary"></i> Обратные вызовы</h1>
+        <p class="text-muted mb-0">Управление запросами экстренного обратного вызова</p>
     </div>
-    <div class="btn-toolbar">
-        <div class="btn-group me-2">
-            <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Новый вызов
-            </a>
-        </div>
-        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+    <div class="btn-group">
+        <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Новый вызов
+        </a>
+        <button class="btn btn-outline-secondary" onclick="location.reload()">
             <i class="bi bi-arrow-clockwise"></i>
         </button>
     </div>
 </div>
 
-<!-- Quick Stats Bar -->
-<div class="stats-bar">
-    <div class="row text-center">
-        <div class="col-6 col-md-3">
-            <div class="h5 mb-1 text-primary">{{ total_count }}</div>
-            <div class="small text-muted">Всего найдено</div>
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-3 col-md-3">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="h5 text-primary mb-1">{{ total_count }}</div>
+                <div class="small text-muted">Всего</div>
+            </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="h5 mb-1 text-success">{{ showing_count }}</div>
-            <div class="small text-muted">Показано</div>
+    </div>
+    <div class="col-3 col-md-3">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="h5 text-success mb-1">{{ showing_count }}</div>
+                <div class="small text-muted">Показано</div>
+            </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="h5 mb-1 text-warning" id="activeCallsCount">-</div>
-            <div class="small text-muted">Активные</div>
+    </div>
+    <div class="col-3 col-md-3">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="h5 text-warning mb-1" id="activeCount">-</div>
+                <div class="small text-muted">Активные</div>
+            </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="h5 mb-1 text-info" id="todayCallsCount">-</div>
-            <div class="small text-muted">Сегодня</div>
+    </div>
+    <div class="col-3 col-md-3">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="h5 text-info mb-1" id="todayCount">-</div>
+                <div class="small text-muted">Сегодня</div>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Filters -->
-<div class="card filter-card mb-4">
-    <div class="card-header bg-transparent border-0">
-        <h6 class="card-title mb-0">
-            <i class="bi bi-funnel text-primary"></i> Фильтры и поиск
-        </h6>
-    </div>
+<div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-3">
-                <label for="status" class="form-label fw-semibold">Статус</label>
-                <select name="status" id="status" class="form-select">
+                <select name="status" class="form-select">
                     <option value="">Все статусы</option>
                     {% for status_code, status_name in statuses %}
                     <option value="{{ status_code }}" {% if status_code == current_status %}selected{% endif %}>
@@ -114,10 +68,8 @@
                     {% endfor %}
                 </select>
             </div>
-
             <div class="col-md-3">
-                <label for="team" class="form-label fw-semibold">Бригада</label>
-                <select name="team" id="team" class="form-select">
+                <select name="team" class="form-select">
                     <option value="">Все бригады</option>
                     {% for team in teams %}
                     <option value="{{ team.id }}" {% if team.id|stringformat:"s" == current_team %}selected{% endif %}>
@@ -126,27 +78,18 @@
                     {% endfor %}
                 </select>
             </div>
-
             <div class="col-md-4">
-                <label for="search" class="form-label fw-semibold">Поиск</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" name="search" id="search" class="form-control"
-                           placeholder="Номер телефона или название бригады..." value="{{ search }}">
-                </div>
+                <input type="text" name="search" class="form-control"
+                       placeholder="Поиск по номеру или бригаде..." value="{{ search }}">
             </div>
-
             <div class="col-md-2">
-                <label class="form-label"> </label>
-                <div class="d-grid gap-2">
+                <div class="btn-group w-100">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-search"></i> Фильтровать
+                        <i class="bi bi-search"></i>
                     </button>
-                    {% if search or current_status or current_team %}
-                    <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-x-circle"></i> Очистить
+                    <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x"></i>
                     </a>
-                    {% endif %}
                 </div>
             </div>
         </form>
@@ -155,140 +98,72 @@
 
 <!-- Callbacks Table -->
 <div class="card">
-    <div class="card-header bg-transparent border-0">
-        <div class="d-flex justify-content-between align-items-center">
-            <h6 class="card-title mb-0">
-                <i class="bi bi-list-ul text-primary"></i> Список обратных вызовов
-                {% if search or current_status or current_team %}
-                    <span class="badge bg-info ms-2">Отфильтровано</span>
-                {% endif %}
-            </h6>
-            {% if total_count > showing_count %}
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i>
-                    Показаны первые {{ showing_count }} из {{ total_count }} результатов
-                </small>
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-list-ul text-primary"></i>
+            Список вызовов
+            {% if search or current_status or current_team %}
+                <span class="badge bg-info">Отфильтровано</span>
             {% endif %}
-        </div>
+        </h6>
     </div>
     <div class="card-body p-0">
         {% if callbacks %}
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th class="border-0 ps-3">Контактная информация</th>
-                        <th class="border-0">Бригада</th>
-                        <th class="border-0">Статус</th>
-                        <th class="border-0">Время</th>
-                        <th class="border-0">Длительность</th>
-                        <th class="border-0">Запрошено</th>
-                        <th class="border-0 pe-3 text-center">Действия</th>
+                        <th>Контакт</th>
+                        <th>Бригада</th>
+                        <th>Статус</th>
+                        <th>Время</th>
+                        <th>Автор</th>
+                        <th width="100">Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for callback in callbacks %}
-                    <tr class="{% if callback.status == 'pending' or callback.status == 'dialing' %}animate-pulse{% endif %}">
-                        <td class="ps-3">
+                    <tr>
+                        <td>
                             <div class="d-flex align-items-center">
-                                <div class="status-indicator
-                                    {% if callback.status == 'completed' %}bg-success
-                                    {% elif callback.status == 'failed' %}bg-danger
-                                    {% elif callback.status == 'pending' %}bg-warning
-                                    {% elif callback.status == 'dialing' %}bg-primary
-                                    {% else %}bg-secondary
-                                    {% endif %}"></div>
+                                <div class="status-dot bg-{% if callback.status == 'completed' %}success{% elif callback.status == 'failed' %}danger{% elif callback.status == 'pending' %}warning{% else %}primary{% endif %}"></div>
                                 <div>
-                                    <div class="phone-number">{{ callback.phone_number }}</div>
+                                    <div class="phone">{{ callback.phone_number }}</div>
                                     {% if callback.call_id %}
-                                        <small class="text-muted">ID: {{ callback.call_id|slice:":8" }}...</small>
+                                        <small class="text-muted">{{ callback.call_id|slice:":8" }}...</small>
                                     {% endif %}
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <span class="badge bg-info bg-opacity-10 text-info border border-info">
-                                {{ callback.team.name }}
+                            <span class="badge bg-info">{{ callback.team.name }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if callback.status == 'completed' %}success{% elif callback.status == 'failed' %}danger{% elif callback.status == 'pending' %}warning{% else %}primary{% endif %}">
+                                {{ callback.get_status_display }}
                             </span>
                         </td>
                         <td>
-                            {% if callback.status == 'completed' %}
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-circle"></i> Завершено
-                                </span>
-                            {% elif callback.status == 'failed' %}
-                                <span class="badge bg-danger">
-                                    <i class="bi bi-x-circle"></i> Не удалось
-                                </span>
-                            {% elif callback.status == 'pending' %}
-                                <span class="badge bg-warning">
-                                    <i class="bi bi-clock"></i> В ожидании
-                                </span>
-                            {% elif callback.status == 'dialing' %}
-                                <span class="badge bg-primary">
-                                    <i class="bi bi-telephone-outbound"></i> Набирается
-                                </span>
-                            {% elif callback.status == 'answered' %}
-                                <span class="badge bg-success">
-                                    <i class="bi bi-telephone-fill"></i> Отвечено
-                                </span>
-                            {% elif callback.status == 'transferring' %}
-                                <span class="badge bg-info">
-                                    <i class="bi bi-arrow-right-square"></i> Переводится
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ callback.get_status_display }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
                             <div class="small">
-                                <div class="fw-semibold">{{ callback.created_at|date:"d M, H:i" }}</div>
-                                {% if callback.call_started_at %}
-                                    <div class="text-success">Начато: {{ callback.call_started_at|date:"H:i:s" }}</div>
-                                {% endif %}
-                                {% if callback.call_ended_at %}
-                                    <div class="text-muted">Завершено: {{ callback.call_ended_at|date:"H:i:s" }}</div>
+                                <div>{{ callback.created_at|date:"d M, H:i" }}</div>
+                                {% if callback.call_duration %}
+                                    <div class="text-muted">{{ callback.call_duration }}с</div>
                                 {% endif %}
                             </div>
                         </td>
                         <td>
-                            {% if callback.call_started_at and callback.call_ended_at %}
-                                {% with duration=callback.call_ended_at|timesince:callback.call_started_at %}
-                                <span class="call-duration badge bg-light text-dark">{{ duration }}</span>
-                                {% endwith %}
-                            {% elif callback.call_started_at %}
-                                <span class="call-duration text-success">
-                                    <i class="bi bi-phone"></i> В процессе...
+                            <small>{{ callback.requested_by.username }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'callbacks:detail' callback.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if callback.has_rating %}
+                                <span class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-star-fill"></i>
                                 </span>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-person-circle text-muted me-2"></i>
-                                <span class="small">{{ callback.requested_by.username }}</span>
-                            </div>
-                        </td>
-                        <td class="pe-3">
-                            <div class="table-actions text-center">
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'callbacks:detail' callback.pk %}"
-                                       class="btn btn-outline-primary" title="Просмотреть детали">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    {% if callback.status == 'failed' and user == callback.requested_by %}
-                                    <button class="btn btn-outline-warning"
-                                            onclick="retryCall({{ callback.pk }})" title="Повторить вызов">
-                                        <i class="bi bi-arrow-clockwise"></i>
-                                    </button>
-                                    {% endif %}
-                                    {% if callback.has_rating %}
-                                    <span class="btn btn-outline-success" title="Есть оценка">
-                                        <i class="bi bi-star-fill"></i>
-                                    </span>
-                                    {% endif %}
-                                </div>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -297,141 +172,66 @@
             </table>
         </div>
 
-        <!-- Footer with stats -->
-        <div class="card-footer bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i>
-                    {% if search or current_status or current_team %}
-                        {{ showing_count }} из {{ total_count }} вызовов (отфильтровано)
-                    {% else %}
-                        {{ showing_count }} вызов{{ showing_count|pluralize:",а,ов" }}
-                    {% endif %}
-                </small>
-                {% if total_count > 50 %}
-                <small class="text-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    Результаты ограничены 50 для повышения производительности
-                </small>
-                {% endif %}
-            </div>
+        <div class="card-footer bg-light text-muted small text-center">
+            {{ showing_count }} из {{ total_count }} вызов{{ total_count|pluralize:",а,ов" }}
+            {% if total_count > 50 %}
+                (ограничено для производительности)
+            {% endif %}
         </div>
 
         {% else %}
         <div class="text-center py-5">
             <i class="bi bi-telephone-x display-1 text-muted"></i>
-            <div class="mt-3">
-                <h5 class="text-muted">
-                    {% if search or current_status or current_team %}
-                        Не найдено обратных вызовов, соответствующих вашим фильтрам
-                    {% else %}
-                        Запросов обратного вызова еще нет
-                    {% endif %}
-                </h5>
-                <p class="text-muted mb-4">
-                    {% if search or current_status or current_team %}
-                        Попробуйте изменить критерии поиска или сбросить фильтры
-                    {% else %}
-                        Начните с создания вашего первого запроса экстренного обратного вызова
-                    {% endif %}
-                </p>
-                {% if not search and not current_status and not current_team %}
-                <a href="{% url 'callbacks:create' %}" class="btn btn-primary btn-lg">
-                    <i class="bi bi-plus-circle"></i> Создать первый вызов
-                </a>
+            <h5 class="text-muted mt-3">
+                {% if search or current_status or current_team %}
+                    Не найдено вызовов по вашим критериям
                 {% else %}
-                <div class="btn-group">
-                    <a href="{% url 'callbacks:list' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-arrow-left"></i> Сбросить фильтры
-                    </a>
-                    <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Новый вызов
-                    </a>
-                </div>
+                    Запросов обратного вызова еще нет
                 {% endif %}
-            </div>
+            </h5>
+            {% if not search and not current_status and not current_team %}
+            <a href="{% url 'callbacks:create' %}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle"></i> Создать первый вызов
+            </a>
+            {% endif %}
         </div>
         {% endif %}
     </div>
 </div>
 
+{% block extra_js %}
 <script>
-function retryCall(callbackId) {
-    if (confirm('Вы уверены, что хотите повторить этот вызов? Это создаст новый запрос обратного вызова.')) {
-        // Show loading state
-        const btn = event.target.closest('button');
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        btn.disabled = true;
-
-        // In a real implementation, you would make an AJAX call to retry the callback
-        setTimeout(() => {
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
-            showToast('Функция повтора будет реализована здесь', 'info');
-        }, 2000);
-    }
-}
-
-// Update quick stats
-function updateQuickStats() {
-    const activeStatuses = document.querySelectorAll('.badge.bg-primary, .badge.bg-warning');
-    const todayRows = document.querySelectorAll('tbody tr');
-
-    document.getElementById('activeCallsCount').textContent = activeStatuses.length;
-
-    // Count today's calls (simplified - would need backend data in real implementation)
+// Update counters
+document.addEventListener('DOMContentLoaded', () => {
+    const rows = document.querySelectorAll('tbody tr');
+    let activeCount = 0;
     let todayCount = 0;
-    const today = new Date().toISOString().split('T')[0];
-    todayRows.forEach(row => {
-        const dateText = row.querySelector('td:nth-child(4) .fw-semibold')?.textContent;
-        if (dateText && dateText.includes(new Date().toLocaleDateString('ru-RU', {month: 'short', day: 'numeric'}))) {
+
+    const today = new Date().toLocaleDateString('ru');
+
+    rows.forEach(row => {
+        const status = row.querySelector('.status-dot');
+        const dateText = row.querySelector('td:nth-child(4)').textContent;
+
+        if (status.classList.contains('bg-warning') || status.classList.contains('bg-primary')) {
+            activeCount++;
+        }
+
+        if (dateText.includes(today.slice(0, 5))) { // rough today check
             todayCount++;
         }
     });
-    document.getElementById('todayCallsCount').textContent = todayCount;
-}
 
-// Auto refresh every 30 seconds for active calls
-setInterval(function() {
-    const activeStatuses = document.querySelectorAll('.badge.bg-primary, .badge.bg-warning');
-    if (activeStatuses.length > 0) {
+    document.getElementById('activeCount').textContent = activeCount;
+    document.getElementById('todayCount').textContent = todayCount;
+});
+
+// Auto refresh for active calls
+setInterval(() => {
+    if (document.getElementById('activeCount').textContent > 0) {
         location.reload();
     }
 }, 30000);
-
-// Initialize stats
-document.addEventListener('DOMContentLoaded', updateQuickStats);
-
-// Enhanced search functionality
-document.getElementById('search').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    if (searchTerm.length === 0) return;
-
-    // Highlight matching text (simple implementation)
-    const rows = document.querySelectorAll('tbody tr');
-    rows.forEach(row => {
-        const phoneCell = row.querySelector('.phone-number');
-        const teamCell = row.querySelector('.badge');
-
-        let hasMatch = false;
-        if (phoneCell && phoneCell.textContent.toLowerCase().includes(searchTerm)) {
-            hasMatch = true;
-        }
-        if (teamCell && teamCell.textContent.toLowerCase().includes(searchTerm)) {
-            hasMatch = true;
-        }
-
-        // Simple visual feedback
-        row.style.opacity = hasMatch || searchTerm.length < 3 ? '1' : '0.5';
-    });
-});
-
-// Clear search highlighting when form is submitted
-document.querySelector('form').addEventListener('submit', function() {
-    document.querySelectorAll('tbody tr').forEach(row => {
-        row.style.opacity = '1';
-    });
-});
 </script>
+{% endblock %}
 {% endblock %}

@@ -85,16 +85,125 @@
         border-radius: 8px;
     }
 
+    .region-info {
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .region-code {
+        font-family: 'Courier New', monospace;
+        font-weight: 700;
+        background: rgba(255,255,255,0.2);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
     .quick-actions {
         background: linear-gradient(135deg, #e7f3ff 0%, #cfe7ff 100%);
         border: 1px solid #b3d9ff;
         border-radius: 12px;
         padding: 1.5rem;
     }
+
+    .team-metrics {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .metric-item {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .metric-item:last-child {
+        border-bottom: none;
+    }
+
+    .metric-label {
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .metric-value {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .breadcrumb-custom {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb-custom .breadcrumb {
+        margin: 0;
+        background: none;
+        padding: 0;
+    }
+
+    .performance-indicator {
+        position: relative;
+        display: inline-block;
+    }
+
+    .performance-ring {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: conic-gradient(#198754 calc(var(--percentage) * 1%), #e9ecef 0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .performance-ring::before {
+        content: '';
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+    }
+
+    .performance-text {
+        position: relative;
+        z-index: 1;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: #198754;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Breadcrumb -->
+<div class="breadcrumb-custom">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'teams:list' %}" class="text-decoration-none">
+                    <i class="bi bi-people me-1"></i>Бригады
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'teams:region_detail' team.region.pk %}" class="text-decoration-none">
+                    <i class="bi bi-geo-alt me-1"></i>{{ team.region.name }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ team.name }}</li>
+        </ol>
+    </nav>
+</div>
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
     <div>
         <h1 class="h2 mb-1">
@@ -125,7 +234,33 @@
         <div class="d-flex justify-content-between align-items-start">
             <div>
                 <h2 class="mb-2">{{ team.name }}</h2>
-                <p class="mb-3 opacity-75">{{ team.description|default:"Описание отсутствует" }}</p>
+
+                <!-- Region Information -->
+                <div class="region-info">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-geo-alt-fill me-2 fs-5"></i>
+                        <div>
+                            <div class="fw-semibold">{{ team.region.name }}</div>
+                            <div class="region-code">{{ team.region.code }}</div>
+                        </div>
+                    </div>
+                    {% if team.region.description %}
+                    <small class="opacity-75">{{ team.region.description }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-light text-primary me-3">
+                        <i class="bi bi-hash"></i> ID: {{ team.id }}
+                    </span>
+                </div>
+
+                {% if team.description %}
+                <p class="mb-3 opacity-75">{{ team.description }}</p>
+                {% else %}
+                <p class="mb-3 opacity-75 fst-italic">Описание отсутствует</p>
+                {% endif %}
+
                 <div class="d-flex align-items-center">
                     <span class="badge team-badge
                         {% if team.is_active %}bg-success{% else %}bg-warning text-dark{% endif %}">
@@ -135,14 +270,22 @@
                             <i class="bi bi-pause-circle me-1"></i> Неактивна
                         {% endif %}
                     </span>
-                    <span class="ms-3 opacity-75">
-                        <i class="bi bi-hash"></i> ID: {{ team.id }}
-                    </span>
                 </div>
             </div>
             <div class="text-end">
+                <div class="mb-3">
+                    <!-- Performance Indicator -->
+                    <div class="performance-indicator" title="Успешность: {{ success_rate }}%">
+                        <div class="performance-ring" style="--percentage: {{ success_rate }}">
+                            <div class="performance-text">{{ success_rate }}%</div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="opacity-75">Успешность</small>
+                        </div>
+                    </div>
+                </div>
                 <div class="mb-2">
-                    <small class="opacity-75">Создано</small>
+                    <small class="opacity-75">Создана</small>
                     <div>{{ team.created_at|date:"d M, Y" }}</div>
                 </div>
                 <div>
@@ -179,8 +322,68 @@
 
     <div class="col-lg-3 col-md-6">
         <div class="stat-card text-center">
-            <div class="stat-number text-info">{{ success_rate }}%</div>
-            <div class="stat-label">Успешность</div>
+            <div class="stat-number text-info">{{ avg_rating }}</div>
+            <div class="stat-label">Средняя оценка</div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Metrics -->
+<div class="team-metrics">
+    <h6 class="mb-3">
+        <i class="bi bi-speedometer text-primary me-2"></i>Детальные метрики
+    </h6>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="metric-item">
+                <div>
+                    <div class="metric-label">Неудачные вызовы</div>
+                    <small class="text-muted">Не завершенные</small>
+                </div>
+                <div class="metric-value text-danger">{{ failed_callbacks }}</div>
+            </div>
+            <div class="metric-item">
+                <div>
+                    <div class="metric-label">В ожидании</div>
+                    <small class="text-muted">Текущие</small>
+                </div>
+                <div class="metric-value text-warning">{{ pending_callbacks }}</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="metric-item">
+                <div>
+                    <div class="metric-label">Сегодня</div>
+                    <small class="text-muted">Вызовы</small>
+                </div>
+                <div class="metric-value text-primary">{{ today_callbacks }}</div>
+            </div>
+            <div class="metric-item">
+                <div>
+                    <div class="metric-label">На этой неделе</div>
+                    <small class="text-muted">Вызовы</small>
+                </div>
+                <div class="metric-value text-info">{{ week_callbacks }}</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="metric-item">
+                <div>
+                    <div class="metric-label">В этом месяце</div>
+                    <small class="text-muted">Вызовы</small>
+                </div>
+                <div class="metric-value text-success">{{ month_callbacks }}</div>
+            </div>
+            <div class="metric-item">
+                <div>
+                    <div class="metric-label">Хорошие оценки</div>
+                    <small class="text-muted">4+ звезды</small>
+                </div>
+                <div class="metric-value text-warning">{{ good_rating_percentage }}%</div>
+            </div>
         </div>
     </div>
 </div>
@@ -201,6 +404,17 @@
                         <div class="display-4 text-warning">{{ avg_rating }}</div>
                         <div class="text-muted">Средняя оценка</div>
                         <div class="small text-muted">{{ good_rating_percentage }}% оценок 4+ звезды</div>
+
+                        <!-- Star Rating Display -->
+                        <div class="mt-2">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= avg_rating|floatformat:0 %}
+                                    <i class="bi bi-star-fill text-warning fs-4"></i>
+                                {% else %}
+                                    <i class="bi bi-star text-muted fs-4"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
 
@@ -238,110 +452,9 @@
             <div class="text-center py-4">
                 <i class="bi bi-star display-4 text-muted"></i>
                 <p class="text-muted mt-3">Оценки еще не получены</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Quick Stats -->
-    <div class="col-lg-4">
-        <div class="activity-card">
-            <h5 class="mb-4">
-                <i class="bi bi-calendar text-primary me-2"></i>Сводка активности
-            </h5>
-
-            <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
-                <div>
-                    <div class="fw-bold">Сегодня</div>
-                    <small class="text-muted">Вызовы</small>
-                </div>
-                <div class="h4 text-primary mb-0">{{ today_callbacks }}</div>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
-                <div>
-                    <div class="fw-bold">На этой неделе</div>
-                    <small class="text-muted">Вызовы</small>
-                </div>
-                <div class="h4 text-info mb-0">{{ week_callbacks }}</div>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
-                <div>
-                    <div class="fw-bold">В этом месяце</div>
-                    <small class="text-muted">Вызовы</small>
-                </div>
-                <div class="h4 text-success mb-0">{{ month_callbacks }}</div>
-            </div>
-
-            {% if pending_callbacks > 0 %}
-            <div class="alert alert-warning">
-                <i class="bi bi-clock me-2"></i>
-                <strong>{{ pending_callbacks }}</strong> вызов{{ pending_callbacks|pluralize:",а,ов" }} в ожидании
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Recent Activity -->
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="activity-card">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="mb-0">
-                    <i class="bi bi-clock-history text-primary me-2"></i>Последние вызовы
-                </h5>
-                <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-sm btn-outline-primary">
-                    Просмотреть все <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-
-            {% if recent_callbacks %}
-            {% for callback in recent_callbacks %}
-            <div class="callback-item">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="fw-semibold">{{ callback.phone_number }}</div>
-                        <small class="text-muted">
-                            <i class="bi bi-person me-1"></i>{{ callback.requested_by.username }}
-                        </small>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge
-                            {% if callback.status == 'completed' %}bg-success
-                            {% elif callback.status == 'failed' %}bg-danger
-                            {% elif callback.status == 'pending' %}bg-warning
-                            {% else %}bg-secondary
-                            {% endif %}">
-                            {{ callback.get_status_display }}
-                        </span>
-                        <div class="small text-muted mt-1">{{ callback.created_at|timesince }} назад</div>
-                    </div>
-                </div>
-
-                {% if callback.has_rating %}
-                <div class="mt-2">
-                    <small class="text-muted">Оценка: </small>
-                    {% for i in "12345" %}
-                        {% if forloop.counter <= callback.rating.rating %}
-                            <i class="bi bi-star-fill text-warning"></i>
-                        {% else %}
-                            <i class="bi bi-star text-muted"></i>
-                        {% endif %}
-                    {% endfor %}
-                    <span class="small text-muted">({{ callback.rating.rating }}/5)</span>
-                </div>
+                {% if total_callbacks > 0 %}
+                <p class="small text-muted">После завершения вызовов пользователи смогут поставить оценку</p>
                 {% endif %}
-            </div>
-            {% endfor %}
-            {% else %}
-            <div class="text-center py-4">
-                <i class="bi bi-telephone-x display-4 text-muted"></i>
-                <p class="text-muted mt-3">Вызовов пока нет</p>
-                <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Создать первый вызов
-                </a>
             </div>
             {% endif %}
         </div>
@@ -363,13 +476,21 @@
                     <i class="bi bi-list me-2"></i>Просмотреть все вызовы
                 </a>
 
+                {% if total_ratings > 0 %}
                 <a href="{% url 'callbacks:ratings' %}?team={{ team.id }}" class="btn btn-outline-warning">
                     <i class="bi bi-star me-2"></i>Просмотреть оценки бригады
                 </a>
+                {% endif %}
 
                 <button class="btn btn-outline-info" onclick="exportTeamData()">
                     <i class="bi bi-download me-2"></i>Экспортировать данные бригады
                 </button>
+
+                <hr>
+
+                <a href="{% url 'teams:region_detail' team.region.pk %}" class="btn btn-outline-success">
+                    <i class="bi bi-geo-alt me-2"></i>Просмотреть регион {{ team.region.code }}
+                </a>
             </div>
         </div>
 
@@ -409,15 +530,105 @@
     </div>
 </div>
 
+<!-- Recent Activity -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="activity-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history text-primary me-2"></i>Последние вызовы
+                </h5>
+                <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-sm btn-outline-primary">
+                    Просмотреть все <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            {% if recent_callbacks %}
+            <div class="row g-3">
+                {% for callback in recent_callbacks %}
+                <div class="col-lg-6">
+                    <div class="callback-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-semibold">{{ callback.phone_number }}</div>
+                                <small class="text-muted">
+                                    <i class="bi bi-person me-1"></i>{{ callback.requested_by.username }}
+                                </small>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i>{{ callback.created_at|timesince }} назад
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge
+                                    {% if callback.status == 'completed' %}bg-success
+                                    {% elif callback.status == 'failed' %}bg-danger
+                                    {% elif callback.status == 'pending' %}bg-warning
+                                    {% else %}bg-secondary
+                                    {% endif %}">
+                                    {{ callback.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if callback.has_rating %}
+                        <div class="mt-2">
+                            <small class="text-muted">Оценка: </small>
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= callback.rating.rating %}
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                {% else %}
+                                    <i class="bi bi-star text-muted"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="small text-muted">({{ callback.rating.rating }}/5)</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if recent_callbacks|length >= 10 %}
+            <div class="text-center mt-3">
+                <a href="{% url 'callbacks:list' %}?team={{ team.id }}" class="btn btn-outline-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Просмотреть все {{ total_callbacks }} вызов{{ total_callbacks|pluralize:",а,ов" }}
+                </a>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-telephone-x display-4 text-muted"></i>
+                <p class="text-muted mt-3">Вызовов пока нет</p>
+                <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Создать первый вызов
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 <script>
 // Export team data
 function exportTeamData() {
     const teamData = {
-        id: {{ team.id }},
-        name: "{{ team.name|escapejs }}",
-        description: "{{ team.description|escapejs }}",
-        is_active: {{ team.is_active|yesno:"true,false" }},
-        created_at: "{{ team.created_at|date:'c' }}",
+        team: {
+            id: {{ team.id }},
+            name: "{{ team.name|escapejs }}",
+            description: "{{ team.description|escapejs }}",
+            is_active: {{ team.is_active|yesno:"true,false" }},
+            created_at: "{{ team.created_at|date:'c' }}",
+            created_by: "{{ team.created_by.username|escapejs }}"
+        },
+        region: {
+            id: {{ team.region.id }},
+            name: "{{ team.region.name|escapejs }}",
+            code: "{{ team.region.code|escapejs }}",
+            description: "{{ team.region.description|escapejs }}"
+        },
         statistics: {
             total_callbacks: {{ total_callbacks }},
             completed_callbacks: {{ completed_callbacks }},
@@ -426,14 +637,38 @@ function exportTeamData() {
             total_ratings: {{ total_ratings }},
             avg_rating: {{ avg_rating }},
             success_rate: {{ success_rate }},
-            good_rating_percentage: {{ good_rating_percentage }}
-        }
+            good_rating_percentage: {{ good_rating_percentage }},
+            today_callbacks: {{ today_callbacks }},
+            week_callbacks: {{ week_callbacks }},
+            month_callbacks: {{ month_callbacks }}
+        },
+        rating_distribution: [
+            {% for dist in rating_distribution %}
+            {
+                rating: {{ dist.rating }},
+                count: {{ dist.count }},
+                percentage: {{ dist.percentage }}
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        recent_callbacks: [
+            {% for callback in recent_callbacks %}
+            {
+                id: {{ callback.id }},
+                phone_number: "{{ callback.phone_number|escapejs }}",
+                status: "{{ callback.status|escapejs }}",
+                created_at: "{{ callback.created_at|date:'c' }}",
+                requested_by: "{{ callback.requested_by.username|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        export_timestamp: new Date().toISOString()
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(teamData, null, 2));
     const downloadLink = document.createElement('a');
     downloadLink.href = dataStr;
-    downloadLink.download = 'brigada_{{ team.id }}_data.json';
+    downloadLink.download = 'team_{{ team.id }}_{{ team.region.code }}_data.json';
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
@@ -450,6 +685,27 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             bar.style.width = width;
         }, 100);
+    });
+
+    // Animate performance ring
+    const performanceRing = document.querySelector('.performance-ring');
+    if (performanceRing) {
+        setTimeout(() => {
+            performanceRing.style.background = `conic-gradient(#198754 calc({{ success_rate }} * 1%), #e9ecef 0)`;
+        }, 500);
+    }
+
+    // Animate stat cards
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
     });
 });
 
@@ -475,5 +731,42 @@ function showToast(message, type = 'info') {
         }, 150);
     }, 4000);
 }
+
+// Auto-refresh functionality (optional)
+let autoRefreshEnabled = false;
+function toggleAutoRefresh() {
+    autoRefreshEnabled = !autoRefreshEnabled;
+    if (autoRefreshEnabled) {
+        setInterval(() => {
+            if (autoRefreshEnabled) {
+                location.reload();
+            }
+        }, 30000); // Refresh every 30 seconds
+        showToast('Автообновление включено (каждые 30 сек)', 'info');
+    } else {
+        showToast('Автообновление отключено', 'info');
+    }
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // 'r' key to refresh
+    if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+        const activeElement = document.activeElement;
+        if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            location.reload();
+        }
+    }
+
+    // 'e' key to edit
+    if (e.key === 'e' && !e.ctrlKey && !e.metaKey) {
+        const activeElement = document.activeElement;
+        if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            window.location.href = "{% url 'teams:edit' team.pk %}";
+        }
+    }
+});
 </script>
 {% endblock %}

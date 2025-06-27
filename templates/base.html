@@ -5,389 +5,402 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Система экстренного обратного вызова{% endblock %}</title>
 
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
         :root {
-            --primary-color: #0d6efd;
-            --secondary-color: #6c757d;
-            --success-color: #198754;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --info-color: #0dcaf0;
-            --sidebar-bg: #f8f9fa;
-            --border-radius: 8px;
+            --primary: #0d6efd;
+            --success: #198754;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --sidebar-width: 260px;
+            --header-height: 60px;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f6fa;
+            background: #f5f6fa;
+            margin: 0;
         }
 
-        .navbar {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%) !important;
-        }
-
-        .navbar-brand {
-            font-weight: 600;
-            font-size: 1.3rem;
-        }
-
+        /* Sidebar */
         .sidebar {
-            min-height: calc(100vh - 56px);
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid #dee2e6;
-            padding-top: 1.5rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary) 0%, #0056b3 100%);
+            color: white;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
         }
 
-        .sidebar .nav-link {
-            color: #495057;
-            padding: 0.75rem 1.25rem;
-            margin: 0.25rem 0;
-            border-radius: var(--border-radius);
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .sidebar-header h5 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+
+        .sidebar-item {
+            margin: 0.25rem 0.5rem;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-radius: 8px;
             transition: all 0.2s ease;
-            font-weight: 500;
         }
 
-        .sidebar .nav-link:hover {
-            background-color: #e9ecef;
-            color: var(--primary-color);
+        .sidebar-link:hover,
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
             transform: translateX(4px);
         }
 
-        .sidebar .nav-link.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .sidebar .nav-link i {
+        .sidebar-link i {
             width: 20px;
-            margin-right: 0.5rem;
+            margin-right: 0.75rem;
         }
 
-        .content-area {
-            min-height: calc(100vh - 56px);
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
             padding: 1.5rem;
         }
 
-        .alert {
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .mobile-toggle {
+                display: block !important;
+            }
+        }
+
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: var(--primary);
+            color: white;
             border: none;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        .btn {
-            border-radius: var(--border-radius);
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
+        /* Utility Classes */
         .card {
             border: none;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: all 0.2s ease;
         }
 
-        .card:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-        }
-
-        .dropdown-menu {
-            border: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            border-radius: var(--border-radius);
-        }
-
-        .form-control, .form-select {
-            border-radius: var(--border-radius);
-            border: 1px solid #dee2e6;
-            transition: all 0.2s ease;
-        }
-
-        .form-control:focus, .form-select:focus {
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-            border-color: var(--primary-color);
-        }
-
-        .badge {
+        .btn {
             border-radius: 6px;
             font-weight: 500;
         }
 
-        .table {
-            border-radius: var(--border-radius);
-            overflow: hidden;
+        .badge {
+            border-radius: 6px;
         }
 
-        .table thead th {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            font-weight: 600;
-            color: #495057;
+        .form-control, .form-select {
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
         }
 
-        footer {
-            background-color: var(--sidebar-bg);
-            border-top: 1px solid #dee2e6;
-            margin-top: auto;
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+            border-color: var(--primary);
         }
 
-        /* Loading spinner */
-        .spinner-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: none;
-            justify-content: center;
+        .table { border-radius: 8px; overflow: hidden; }
+
+        .phone { font-family: 'Courier New', monospace; font-weight: 600; }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: between;
             align-items: center;
-            z-index: 9999;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        /* Mobile improvements */
-        @media (max-width: 768px) {
-            .content-area {
-                padding: 1rem;
-            }
-
-            .btn-toolbar {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .table-responsive {
-                font-size: 0.9rem;
-            }
+        .page-header h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 600;
         }
 
-        /* Smooth page transitions */
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
+        /* Animations */
+        .fade-in { animation: fadeIn 0.3s ease; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        /* User Menu */
+        .user-menu {
+            position: absolute;
+            bottom: 1rem;
+            left: 0.5rem;
+            right: 0.5rem;
+        }
+
+        .user-info {
+            padding: 0.75rem 1rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .user-info small {
+            opacity: 0.8;
+        }
+
+        .logout-btn {
+            width: 100%;
+            margin-top: 0.5rem;
+            background: rgba(220,53,69,0.2);
+            border: 1px solid rgba(220,53,69,0.3);
+            color: white;
+        }
+
+        .logout-btn:hover {
+            background: rgba(220,53,69,0.3);
+            color: white;
         }
     </style>
 
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Loading overlay -->
-    <div class="spinner-overlay" id="loadingSpinner">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Загрузка...</span>
+    <!-- Mobile Toggle -->
+    <button class="mobile-toggle btn" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Sidebar -->
+    {% if user.is_authenticated %}
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="bi bi-telephone-fill fs-4 mb-2"></i>
+            <h5>Система экстренного обратного вызова</h5>
         </div>
-    </div>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'callbacks:dashboard' %}">
-                <i class="bi bi-telephone-fill"></i> Система экстренного обратного вызова
-            </a>
+        <div class="sidebar-menu">
+            <div class="sidebar-item">
+                <a href="{% url 'callbacks:dashboard' %}" class="sidebar-link">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Панель управления</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="{% url 'callbacks:create' %}" class="sidebar-link">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Новый вызов</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="{% url 'callbacks:list' %}" class="sidebar-link">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Все вызовы</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="{% url 'teams:region_list' %}" class="sidebar-link">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>Регионы</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="{% url 'teams:list' %}" class="sidebar-link">
+                    <i class="bi bi-people"></i>
+                    <span>Бригады</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="{% url 'callbacks:ratings' %}" class="sidebar-link">
+                    <i class="bi bi-star"></i>
+                    <span>Оценки</span>
+                </a>
+            </div>
+        </div>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                {% if user.is_authenticated %}
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'callbacks:dashboard' %}">
-                            <i class="bi bi-speedometer2"></i> Панель управления
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'callbacks:list' %}">
-                            <i class="bi bi-telephone"></i> Обратные вызовы
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'teams:list' %}">
-                            <i class="bi bi-people"></i> Бригады
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'callbacks:ratings' %}">
-                            <i class="bi bi-star"></i> Оценки
-                        </a>
-                    </li>
-                </ul>
-
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ user.username }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            {% if user.is_staff %}
-                            <li><a class="dropdown-item" href="/admin/"><i class="bi bi-gear"></i> Админ</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            {% endif %}
-                            <li><a class="dropdown-item" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right"></i> Выход</a></li>
-                        </ul>
-                    </li>
-                </ul>
+        <div class="user-menu">
+            <div class="user-info">
+                <i class="bi bi-person-circle fs-5"></i>
+                <div class="fw-semibold">{{ user.username }}</div>
+                <small>{{ user.email|default:"Пользователь" }}</small>
+                {% if user.is_staff %}
+                <a href="/admin/" class="btn btn-sm btn-outline-light mt-2" target="_blank">
+                    <i class="bi bi-gear"></i> Админ
+                </a>
                 {% endif %}
+                <a href="{% url 'users:logout' %}" class="btn btn-sm logout-btn">
+                    <i class="bi bi-box-arrow-right"></i> Выход
+                </a>
             </div>
         </div>
-    </nav>
-
-    <!-- Messages -->
-    {% if messages %}
-    <div class="container-fluid mt-3">
-        {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            <div class="d-flex align-items-center">
-                {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
-                {% if message.tags == 'error' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
-                {% if message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
-                {% if message.tags == 'info' %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
-                <span>{{ message }}</span>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {% endfor %}
     </div>
     {% endif %}
 
     <!-- Main Content -->
-    <div class="container-fluid">
-        <div class="row">
-            {% if user.is_authenticated %}
-            <!-- Sidebar -->
-            <nav class="col-md-2 d-none d-md-block sidebar">
-                <div class="position-sticky">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'callbacks:dashboard' %}">
-                                <i class="bi bi-speedometer2"></i> Панель управления
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'callbacks:create' %}">
-                                <i class="bi bi-plus-circle"></i> Новый обратный вызов
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'callbacks:list' %}">
-                                <i class="bi bi-list-ul"></i> Все обратные вызовы
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'teams:list' %}">
-                                <i class="bi bi-people"></i> Бригады
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'callbacks:ratings' %}">
-                                <i class="bi bi-star"></i> Оценки
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-
-            <!-- Content -->
-            <main class="col-md-10 ms-sm-auto content-area fade-in">
-                {% block content %}{% endblock %}
-            </main>
-            {% else %}
-            <!-- Full width for login -->
-            <main class="col-12 fade-in">
-                {% block login_content %}{% endblock %}
-            </main>
-            {% endif %}
+    <div class="main-content fade-in">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}-fill me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
         </div>
+        {% endif %}
+
+        {% if user.is_authenticated %}
+            {% block content %}{% endblock %}
+        {% else %}
+            {% block login_content %}{% endblock %}
+        {% endif %}
     </div>
 
-    <!-- Footer -->
-    <footer class="text-center py-3 mt-5">
-        <div class="container">
-            <span class="text-muted">Система экстренного обратного вызова © 2024 |
-                <i class="bi bi-heart-fill text-danger"></i> Создана для лучшего здравоохранения
-            </span>
-        </div>
-    </footer>
-
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // Global utilities
+        window.App = {
+            // Show toast notification
+            toast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed top-0 end-0 m-3 fade show`;
+                toast.style.zIndex = '9999';
+                toast.innerHTML = `
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}-fill me-2"></i>
+                    ${message}
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => document.body.removeChild(toast), 150);
+                }, 4000);
+            },
+
+            // Copy to clipboard
+            copy(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    this.toast('Скопировано в буфер обмена!', 'success');
+                }).catch(() => {
+                    this.toast('Ошибка копирования', 'error');
+                });
+            },
+
+            // Loading button state
+            loading(btn, loading = true) {
+                if (loading) {
+                    btn.dataset.originalText = btn.innerHTML;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Загрузка...';
+                    btn.disabled = true;
+                } else {
+                    btn.innerHTML = btn.dataset.originalText;
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+
+        // Close sidebar on mobile when clicking outside
+        document.addEventListener('click', (e) => {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-toggle');
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(e.target) &&
+                !toggle.contains(e.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+
         // Active navigation highlighting
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.sidebar .nav-link');
+            const navLinks = document.querySelectorAll('.sidebar-link');
 
             navLinks.forEach(link => {
                 if (link.getAttribute('href') === currentPath) {
                     link.classList.add('active');
                 }
             });
-        });
 
-        // Form loading states
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function() {
-                const submitBtn = form.querySelector('button[type="submit"]');
-                if (submitBtn) {
-                    const originalText = submitBtn.innerHTML;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Обработка...';
-                    submitBtn.disabled = true;
-                }
-            });
-        });
-
-        // Auto-dismiss alerts after 5 seconds
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-
-        // Copy to clipboard helper
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(function() {
-                showToast('Скопировано в буфер обмена!', 'success');
-            }).catch(function() {
-                showToast('Не удалось скопировать', 'error');
-            });
-        }
-
-        // Toast notifications
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3 fade show`;
-            toast.style.zIndex = '9999';
-            toast.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}-fill me-2"></i>
-                    <span>${message}</span>
-                </div>
-            `;
-            document.body.appendChild(toast);
-
+            // Auto-dismiss alerts
             setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => document.body.removeChild(toast), 150);
-            }, 3000);
-        }
+                document.querySelectorAll('.alert').forEach(alert => {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
     </script>
 
     {% block extra_js %}{% endblock %}

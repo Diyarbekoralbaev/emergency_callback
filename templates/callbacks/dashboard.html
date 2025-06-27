@@ -55,16 +55,49 @@
         color: #6c757d;
         font-weight: 500;
     }
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .filter-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+    }
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+    .team-stat-item {
+        border-left: 4px solid #007bff;
+        padding-left: 12px;
+        margin-bottom: 12px;
+    }
+    .filter-badge {
+        background: #007bff;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        margin-right: 5px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
     <div>
         <h1 class="h2 mb-1">
             <i class="bi bi-speedometer2 text-primary"></i> Панель управления
         </h1>
-        <p class="text-muted mb-0">Обзор сегодняшней активности экстренных обратных вызовов</p>
+        <p class="text-muted mb-0">
+            {{ period_description }}
+            {% if has_filters %}
+                <span class="filter-badge">{{ filter_count }} фильтр{{ filter_count|pluralize:",,ов" }}</span>
+            {% endif %}
+        </p>
     </div>
     <div class="btn-toolbar">
         <div class="btn-group me-2">
@@ -78,6 +111,77 @@
     </div>
 </div>
 
+<!-- Filters Section -->
+<div class="filter-section">
+    <form method="get" id="filterForm">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <label for="region" class="form-label">Регион</label>
+                <select name="region" id="region" class="form-select form-select-sm">
+                    <option value="">Все регионы</option>
+                    {% for region in regions %}
+                        <option value="{{ region.id }}" {% if current_region == region.id|stringformat:"s" %}selected{% endif %}>
+                            {{ region.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="team" class="form-label">Бригада</label>
+                <select name="team" id="team" class="form-select form-select-sm">
+                    <option value="">Все бригады</option>
+                    {% for team in teams %}
+                        <option value="{{ team.id }}" {% if current_team == team.id|stringformat:"s" %}selected{% endif %}>
+                            {{ team.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="status" class="form-label">Статус</label>
+                <select name="status" id="status" class="form-select form-select-sm">
+                    <option value="">Все статусы</option>
+                    {% for status_code, status_name in statuses %}
+                        <option value="{{ status_code }}" {% if current_status == status_code %}selected{% endif %}>
+                            {{ status_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">Дата с</label>
+                <input type="date" name="date_from" id="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">Дата по</label>
+                <input type="date" name="date_to" id="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="btn-group w-100">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel"></i> Применить
+                    </button>
+                    <a href="{% url 'callbacks:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Date Filters -->
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('today')">Сегодня</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('yesterday')">Вчера</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('week')">7 дней</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('month')">30 дней</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
 <!-- Main Statistics Cards -->
 <div class="row g-4 mb-4">
     <div class="col-lg-3 col-md-6">
@@ -88,8 +192,8 @@
                         <i class="bi bi-telephone"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <div class="metric-large text-primary">{{ total_calls_today }}</div>
-                        <div class="metric-label">Всего вызовов сегодня</div>
+                        <div class="metric-large text-primary">{{ total_calls }}</div>
+                        <div class="metric-label">Всего вызовов</div>
                     </div>
                 </div>
             </div>
@@ -104,7 +208,7 @@
                         <i class="bi bi-check-circle"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <div class="metric-large text-success">{{ completed_calls_today }}</div>
+                        <div class="metric-large text-success">{{ completed_calls }}</div>
                         <div class="metric-label">Успешно завершено</div>
                     </div>
                 </div>
@@ -120,7 +224,7 @@
                         <i class="bi bi-clock"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <div class="metric-large text-warning">{{ pending_calls_today }}</div>
+                        <div class="metric-large text-warning">{{ pending_calls }}</div>
                         <div class="metric-label">В ожидании/В процессе</div>
                     </div>
                 </div>
@@ -145,50 +249,51 @@
     </div>
 </div>
 
-<!-- Rating Overview Row -->
+<!-- Charts and Analytics Row -->
 <div class="row g-4 mb-4">
+    <!-- Daily Performance Chart -->
+    <div class="col-lg-8">
+        <div class="card stat-card h-100">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-graph-up text-primary"></i> Динамика вызовов
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Overview -->
     <div class="col-lg-4">
         <div class="card stat-card h-100">
             <div class="card-header bg-transparent border-0 pb-0">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-star text-warning"></i> Средняя оценка сегодня
+                    <i class="bi bi-star text-warning"></i> Средняя оценка
                 </h6>
             </div>
             <div class="card-body text-center pt-2">
                 <div class="mb-3">
                     {% for i in "12345" %}
-                        {% if forloop.counter <= avg_rating_today %}
+                        {% if forloop.counter <= avg_rating %}
                             <i class="bi bi-star-fill rating-stars"></i>
                         {% else %}
                             <i class="bi bi-star rating-stars"></i>
                         {% endif %}
                     {% endfor %}
                 </div>
-                <div class="metric-large text-warning mb-1">{{ avg_rating_today }}/5.0</div>
-                <div class="metric-label">{{ total_ratings_today }} оцен{{ total_ratings_today|pluralize:"ка,ки,ок" }}</div>
-            </div>
-        </div>
-    </div>
+                <div class="metric-large text-warning mb-1">{{ avg_rating }}/5.0</div>
+                <div class="metric-label">{{ total_ratings }} оцен{{ total_ratings|pluralize:"ка,ки,ок" }}</div>
 
-    <div class="col-lg-8">
-        <div class="card stat-card h-100">
-            <div class="card-header bg-transparent border-0 pb-0">
-                <h6 class="card-title mb-0">
-                    <i class="bi bi-bar-chart text-primary"></i> Распределение оценок
-                </h6>
-            </div>
-            <div class="card-body pt-2">
-                {% if total_ratings_today > 0 %}
+                <!-- Rating Distribution -->
+                <div class="mt-4">
                     {% for dist in rating_distribution %}
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="me-3" style="width: 120px;">
-                            {% for i in "12345" %}
-                                {% if forloop.counter <= dist.rating %}
-                                    <i class="bi bi-star-fill rating-stars"></i>
-                                {% else %}
-                                    <i class="bi bi-star text-muted"></i>
-                                {% endif %}
-                            {% endfor %}
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2" style="width: 60px; font-size: 12px;">
+                            {{ dist.rating }}★
                         </div>
                         <div class="flex-grow-1">
                             <div class="rating-bar">
@@ -200,21 +305,65 @@
                                     style="width: {{ dist.percentage }}%"></div>
                             </div>
                         </div>
-                        <div class="ms-3" style="width: 80px; text-align: right;">
-                            <span class="badge bg-light text-dark">{{ dist.count }} ({{ dist.percentage }}%)</span>
+                        <div class="ms-2" style="width: 40px; text-align: right; font-size: 12px;">
+                            {{ dist.count }}
                         </div>
                     </div>
                     {% endfor %}
-                {% else %}
-                    <div class="text-center py-3">
-                        <i class="bi bi-star fs-2 text-muted"></i>
-                        <p class="text-muted mt-2 mb-0">Сегодня оценок не получено</p>
-                    </div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Team/Region Performance -->
+{% if team_stats %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card stat-card">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-people text-primary"></i>
+                    {% if current_region or current_team %}Производительность бригад{% else %}Производительность по регионам{% endif %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for stat in team_stats %}
+                    <div class="col-lg-6 col-xl-4 mb-3">
+                        <div class="team-stat-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-1">{{ stat.team.name }}</h6>
+                                    {% if stat.team.region %}
+                                        <small class="text-muted">{{ stat.team.region.name }}</small>
+                                    {% endif %}
+                                </div>
+                                <span class="badge bg-primary">{{ stat.success_rate }}%</span>
+                            </div>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="small text-muted">Вызовы</div>
+                                    <div class="fw-bold">{{ stat.total_calls }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="small text-muted">Успешно</div>
+                                    <div class="fw-bold text-success">{{ stat.completed_calls }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="small text-muted">Рейтинг</div>
+                                    <div class="fw-bold text-warning">{{ stat.avg_rating }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Recent Calls -->
 <div class="row">
@@ -224,7 +373,7 @@
                 <h6 class="card-title mb-0">
                     <i class="bi bi-clock-history text-primary"></i> Недавние вызовы
                 </h6>
-                <a href="{% url 'callbacks:list' %}" class="btn btn-sm btn-outline-primary">
+                <a href="{% url 'callbacks:list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-sm btn-outline-primary">
                     Посмотреть все <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
@@ -235,7 +384,7 @@
                         <thead>
                             <tr>
                                 <th class="border-0">Контакт</th>
-                                <th class="border-0">Бригада</th>
+                                <th class="border-0">Регион/Бригада</th>
                                 <th class="border-0">Статус</th>
                                 <th class="border-0">Оценка</th>
                                 <th class="border-0">Создано</th>
@@ -255,7 +404,10 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-info status-badge">{{ callback.team.name }}</span>
+                                    <div>
+                                        <small class="text-muted">{{ callback.team.region.name }}</small><br>
+                                        <span class="badge bg-info status-badge">{{ callback.team.name }}</span>
+                                    </div>
                                 </td>
                                 <td>
                                     {% if callback.status == 'completed' %}
@@ -316,9 +468,15 @@
                 {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-telephone-x fs-1 text-muted"></i>
-                    <p class="text-muted mt-3 mb-3">Сегодня вызовов еще не было</p>
+                    <p class="text-muted mt-3 mb-3">
+                        {% if has_filters %}
+                            Вызовов с указанными фильтрами не найдено
+                        {% else %}
+                            Вызовов в выбранном периоде не было
+                        {% endif %}
+                    </p>
                     <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Создать первый обратный вызов
+                        <i class="bi bi-plus-circle"></i> Создать обратный вызов
                     </a>
                 </div>
                 {% endif %}
@@ -327,10 +485,126 @@
     </div>
 </div>
 
+<!-- Chart.js Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
 <script>
-// Auto refresh every 30 seconds
+// Region/Team cascade filter
+document.getElementById('region').addEventListener('change', function() {
+    const regionId = this.value;
+    const teamSelect = document.getElementById('team');
+
+    // Clear team options
+    teamSelect.innerHTML = '<option value="">Все бригады</option>';
+
+    if (regionId) {
+        fetch(`/callbacks/get-teams-by-region/?region_id=${regionId}`)
+            .then(response => response.json())
+            .then(data => {
+                data.teams.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team.id;
+                    option.textContent = team.name;
+                    teamSelect.appendChild(option);
+                });
+            });
+    } else {
+        // Restore all teams if no region selected
+        location.reload();
+    }
+});
+
+// Quick date range functions
+function setDateRange(range) {
+    const today = new Date();
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+
+    switch(range) {
+        case 'today':
+            const todayStr = today.toISOString().split('T')[0];
+            dateFrom.value = todayStr;
+            dateTo.value = todayStr;
+            break;
+        case 'yesterday':
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            dateFrom.value = yesterdayStr;
+            dateTo.value = yesterdayStr;
+            break;
+        case 'week':
+            const weekAgo = new Date(today);
+            weekAgo.setDate(today.getDate() - 7);
+            dateFrom.value = weekAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+        case 'month':
+            const monthAgo = new Date(today);
+            monthAgo.setDate(today.getDate() - 30);
+            dateFrom.value = monthAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+    }
+
+    document.getElementById('filterForm').submit();
+}
+
+// Daily Performance Chart
+const dailyChartData = {
+    labels: [{% for stat in daily_stats %}'{{ stat.date }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Всего вызовов',
+        data: [{% for stat in daily_stats %}{{ stat.total_calls }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        borderColor: '#007bff',
+        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+    }, {
+        label: 'Успешных',
+        data: [{% for stat in daily_stats %}{{ stat.completed_calls }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        borderColor: '#28a745',
+        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+    }]
+};
+
+const dailyChartConfig = {
+    type: 'line',
+    data: dailyChartData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        interaction: {
+            intersect: false,
+            mode: 'index'
+        }
+    }
+};
+
+const dailyChart = new Chart(
+    document.getElementById('dailyChart'),
+    dailyChartConfig
+);
+
+// Auto refresh every 30 seconds if there are pending calls
 setInterval(function() {
-    // Only refresh if there are pending calls
     const pendingBadges = document.querySelectorAll('.badge.bg-primary, .badge.bg-warning');
     if (pendingBadges.length > 0) {
         location.reload();
@@ -341,6 +615,13 @@ setInterval(function() {
 document.querySelector('button[onclick="location.reload()"]').addEventListener('click', function() {
     this.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span class="spinner-border spinner-border-sm" role="status"></span>';
     this.disabled = true;
+});
+
+// Form auto-submit on filter change (except date inputs)
+document.querySelectorAll('#region, #team, #status').forEach(element => {
+    element.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
 });
 </script>
 {% endblock %}

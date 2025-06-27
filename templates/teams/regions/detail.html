@@ -1,0 +1,416 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ region.name }} - Детали региона{% endblock %}
+
+{% block extra_css %}
+<style>
+    .region-header {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        transition: transform 0.2s ease;
+        height: 100%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .activity-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+
+    .team-item {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+
+    .team-item:hover {
+        background-color: #f8f9fa;
+        border-color: #198754;
+    }
+
+    .region-badge {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+    }
+
+    .region-code {
+        font-family: 'Courier New', monospace;
+        font-size: 1.2rem;
+        font-weight: 700;
+        background: rgba(255,255,255,0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    .quick-actions {
+        background: linear-gradient(135deg, #e7f3ff 0%, #cfe7ff 100%);
+        border: 1px solid #b3d9ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">
+            <i class="bi bi-geo-alt text-success"></i> Детали региона
+        </h1>
+        <p class="text-muted mb-0">Полная информация и статистика</p>
+    </div>
+    <div class="btn-toolbar">
+        <div class="btn-group me-2">
+            <a href="{% url 'teams:region_edit' region.pk %}" class="btn btn-success">
+                <i class="bi bi-pencil"></i> Редактировать регион
+            </a>
+        </div>
+        <div class="btn-group me-2">
+            <a href="{% url 'teams:region_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Назад к регионам
+            </a>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Region Header -->
+<div class="card mb-4" style="border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-radius: 16px;">
+    <div class="region-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2 class="mb-2">{{ region.name }}</h2>
+                <div class="region-code mb-3">{{ region.code }}</div>
+                {% if region.description %}
+                <p class="mb-3 opacity-75">{{ region.description }}</p>
+                {% else %}
+                <p class="mb-3 opacity-75 fst-italic">Описание отсутствует</p>
+                {% endif %}
+                <div class="d-flex align-items-center">
+                    <span class="badge region-badge
+                        {% if region.is_active %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {% if region.is_active %}
+                            <i class="bi bi-check-circle me-1"></i> Активен
+                        {% else %}
+                            <i class="bi bi-pause-circle me-1"></i> Неактивен
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="mb-2">
+                    <small class="opacity-75">Создан</small>
+                    <div>{{ region.created_at|date:"d M, Y" }}</div>
+                </div>
+                <div>
+                    <small class="opacity-75">Пользователем</small>
+                    <div>{{ region.created_by.username }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Statistics -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card text-center">
+            <div class="stat-number text-primary">{{ active_teams }}</div>
+            <div class="stat-label">Активные бригады</div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card text-center">
+            <div class="stat-number text-success">{{ total_teams }}</div>
+            <div class="stat-label">Всего бригад</div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card text-center">
+            <div class="stat-number text-info">{{ total_callbacks }}</div>
+            <div class="stat-label">Всего вызовов</div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card text-center">
+            <div class="stat-number text-warning">{{ success_rate }}%</div>
+            <div class="stat-label">Успешность</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row g-4">
+    <!-- Teams in Region -->
+    <div class="col-lg-8">
+        <div class="activity-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="bi bi-people text-primary me-2"></i>Бригады в регионе
+                </h5>
+                <div class="btn-group">
+                    <a href="{% url 'teams:create' %}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-plus-circle"></i> Новая бригада
+                    </a>
+                    <a href="{% url 'teams:list' %}?region={{ region.id }}" class="btn btn-sm btn-outline-primary">
+                        Просмотреть все <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            {% if teams %}
+            {% for team in teams %}
+            <div class="team-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="fw-semibold">{{ team.name }}</div>
+                        <small class="text-muted">
+                            {% if team.description %}
+                                {{ team.description|truncatewords:10 }}
+                            {% else %}
+                                Описание отсутствует
+                            {% endif %}
+                        </small>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="bi bi-person me-1"></i>{{ team.created_by.username }}
+                                <span class="mx-2">•</span>
+                                <i class="bi bi-calendar me-1"></i>{{ team.created_at|date:"d M, Y" }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge
+                            {% if team.is_active %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                            {% if team.is_active %}Активна{% else %}Неактивна{% endif %}
+                        </span>
+                        <div class="mt-2">
+                            <div class="row g-1 text-center">
+                                <div class="col-4">
+                                    <div class="small text-muted">Вызовы</div>
+                                    <div class="fw-bold text-primary">{{ team.callback_count|default:0 }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="small text-muted">Оценки</div>
+                                    <div class="fw-bold text-warning">{{ team.rating_count|default:0 }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="small text-muted">Ср. оценка</div>
+                                    <div class="fw-bold text-info">
+                                        {% if team.avg_rating %}{{ team.avg_rating|floatformat:1 }}{% else %}-{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <a href="{% url 'teams:detail' team.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Просмотр
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-people display-4 text-muted"></i>
+                <p class="text-muted mt-3">В этом регионе пока нет бригад</p>
+                <a href="{% url 'teams:create' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Создать первую бригаду
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions and Recent Teams -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="quick-actions mb-4">
+            <h6 class="mb-3">
+                <i class="bi bi-lightning text-warning me-2"></i>Быстрые действия
+            </h6>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'teams:create' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-2"></i>Создать бригаду в регионе
+                </a>
+
+                <a href="{% url 'teams:list' %}?region={{ region.id }}" class="btn btn-outline-primary">
+                    <i class="bi bi-people me-2"></i>Просмотреть все бригады
+                </a>
+
+                <a href="{% url 'callbacks:list' %}?region={{ region.id }}" class="btn btn-outline-info">
+                    <i class="bi bi-telephone me-2"></i>Просмотреть вызовы региона
+                </a>
+
+                <button class="btn btn-outline-secondary" onclick="exportRegionData()">
+                    <i class="bi bi-download me-2"></i>Экспортировать данные региона
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Teams -->
+        {% if recent_teams %}
+        <div class="activity-card mb-4">
+            <h6 class="mb-3">
+                <i class="bi bi-clock-history text-secondary me-2"></i>Недавно созданные бригады
+            </h6>
+
+            {% for team in recent_teams %}
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                <div>
+                    <div class="fw-semibold small">{{ team.name }}</div>
+                    <small class="text-muted">{{ team.created_at|timesince }} назад</small>
+                </div>
+                <div>
+                    <a href="{% url 'teams:detail' team.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Region Management -->
+        <div class="activity-card">
+            <h6 class="mb-3">
+                <i class="bi bi-gear text-secondary me-2"></i>Управление регионом
+            </h6>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'teams:region_edit' region.pk %}" class="btn btn-outline-success">
+                    <i class="bi bi-pencil me-2"></i>Редактировать регион
+                </a>
+
+                {% if region.is_active %}
+                <a href="{% url 'teams:region_delete' region.pk %}" class="btn btn-outline-warning">
+                    <i class="bi bi-pause-circle me-2"></i>Деактивировать регион
+                </a>
+                {% else %}
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="activate">
+                    <button type="submit" class="btn btn-outline-success w-100">
+                        <i class="bi bi-play-circle me-2"></i>Активировать регион
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if user.is_staff %}
+                <a href="/admin/teams/region/{{ region.id }}/change/"
+                   class="btn btn-outline-secondary" target="_blank">
+                    <i class="bi bi-gear me-2"></i>Админ-просмотр
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Export region data
+function exportRegionData() {
+    const regionData = {
+        id: {{ region.id }},
+        name: "{{ region.name|escapejs }}",
+        code: "{{ region.code|escapejs }}",
+        description: "{{ region.description|escapejs }}",
+        is_active: {{ region.is_active|yesno:"true,false" }},
+        created_at: "{{ region.created_at|date:'c' }}",
+        statistics: {
+            active_teams: {{ active_teams }},
+            total_teams: {{ total_teams }},
+            total_callbacks: {{ total_callbacks }},
+            completed_callbacks: {{ completed_callbacks }},
+            success_rate: {{ success_rate }}
+        },
+        teams: [
+            {% for team in teams %}
+            {
+                id: {{ team.id }},
+                name: "{{ team.name|escapejs }}",
+                is_active: {{ team.is_active|yesno:"true,false" }},
+                callback_count: {{ team.callback_count|default:0 }},
+                rating_count: {{ team.rating_count|default:0 }},
+                avg_rating: {{ team.avg_rating|default:0 }}
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(regionData, null, 2));
+    const downloadLink = document.createElement('a');
+    downloadLink.href = dataStr;
+    downloadLink.download = 'region_{{ region.id }}_{{ region.code }}_data.json';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    showToast('Данные региона успешно экспортированы!', 'success');
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3 fade show`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}-fill me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 150);
+    }, 4000);
+}
+</script>
+{% endblock %}

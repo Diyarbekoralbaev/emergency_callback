@@ -33,14 +33,17 @@
     }
 
     .input-group-custom .form-control,
-    .input-group-custom .form-control:focus {
+    .input-group-custom .form-select,
+    .input-group-custom .form-control:focus,
+    .input-group-custom .form-select:focus {
         padding-left: 3rem;
         border-radius: 8px;
         border: 2px solid #e9ecef;
         transition: all 0.3s ease;
     }
 
-    .input-group-custom .form-control:focus {
+    .input-group-custom .form-control:focus,
+    .input-group-custom .form-select:focus {
         border-color: #0d6efd;
         box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
     }
@@ -112,20 +115,29 @@
         margin-bottom: 1rem;
     }
 
-    .existing-teams {
-        max-height: 300px;
-        overflow-y: auto;
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1rem;
+    .region-selector {
+        position: relative;
     }
 
-    .team-item {
-        padding: 0.5rem;
-        border-radius: 6px;
-        margin-bottom: 0.5rem;
-        background: white;
-        border: 1px solid #e9ecef;
+    .region-selector .form-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    }
+
+    .region-info {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .no-regions-warning {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
+        border: 2px solid #dc3545;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
     }
 
     @media (max-width: 768px) {
@@ -133,7 +145,8 @@
             margin: 0 0.5rem;
         }
 
-        .input-group-custom .form-control {
+        .input-group-custom .form-control,
+        .input-group-custom .form-select {
             padding-left: 2.5rem;
         }
 
@@ -174,8 +187,34 @@
                 </a>
             {% endif %}
         </div>
+        <div class="btn-group">
+            <a href="{% url 'teams:region_list' %}" class="btn btn-outline-success">
+                <i class="bi bi-geo-alt"></i> Управление регионами
+            </a>
+        </div>
     </div>
 </div>
+
+<!-- Check if no regions exist -->
+{% if not form.fields.region.queryset.exists %}
+<div class="no-regions-warning">
+    <h5 class="text-danger mb-3">
+        <i class="bi bi-exclamation-triangle me-2"></i> Нет доступных регионов
+    </h5>
+    <p class="mb-3">
+        Перед созданием бригады необходимо создать хотя бы один регион.
+        Регионы используются для организации бригад по географическим областям.
+    </p>
+    <div class="d-flex gap-2">
+        <a href="{% url 'teams:region_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle me-2"></i> Создать первый регион
+        </a>
+        <a href="{% url 'teams:region_list' %}" class="btn btn-outline-success">
+            <i class="bi bi-geo-alt me-2"></i> Управление регионами
+        </a>
+    </div>
+</div>
+{% endif %}
 
 <div class="row g-4">
     <!-- Main Form -->
@@ -222,6 +261,56 @@
                                 <i class="bi bi-info-circle text-primary"></i>
                                 {{ form.name.help_text }}
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Region Selection Section -->
+                    <div class="form-section">
+                        <h6 class="mb-3">
+                            <i class="bi bi-geo-alt text-success me-2"></i> Региональное назначение
+                        </h6>
+
+                        <div class="input-group-custom region-selector">
+                            <i class="bi bi-geo-alt input-icon"></i>
+                            {{ form.region }}
+                            {% if form.region.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.region.errors %}
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle text-success"></i>
+                                {{ form.region.help_text }}
+                            </div>
+                        </div>
+
+                        <!-- Selected Region Info -->
+                        <div id="regionInfo" class="region-info" style="display: none;">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <i class="bi bi-geo-alt-fill text-success fs-4"></i>
+                                </div>
+                                <div>
+                                    <h6 id="regionName" class="mb-1">Название региона</h6>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-success me-2" id="regionCode">KOD</span>
+                                        <small class="text-muted">Код региона</small>
+                                    </div>
+                                    <p id="regionDesc" class="mb-0 small text-muted">Описание региона...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Region Creation -->
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                Нужного региона нет в списке?
+                                <a href="{% url 'teams:region_create' %}" target="_blank" class="text-decoration-none">
+                                    <i class="bi bi-plus-circle"></i> Создать новый регион
+                                </a>
+                            </small>
                         </div>
                     </div>
 
@@ -292,6 +381,10 @@
                             </div>
                             <div>
                                 <h5 id="previewName" class="mb-1">Название бригады</h5>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-primary me-2" id="previewRegion">Регион</span>
+                                    <small class="text-muted">Область обслуживания</small>
+                                </div>
                                 <p id="previewDesc" class="mb-0 text-muted small">Описание бригады...</p>
                             </div>
                         </div>
@@ -309,7 +402,7 @@
                             </a>
                         {% endif %}
 
-                        <button type="submit" class="btn btn-success btn-create">
+                        <button type="submit" class="btn btn-success btn-create" {% if not form.fields.region.queryset.exists %}disabled{% endif %}>
                             {% if team %}
                                 <i class="bi bi-check-circle me-2"></i> Обновить бригаду
                             {% else %}
@@ -361,6 +454,13 @@
                     </a>
                 </div>
                 {% endif %}
+
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Регион:</small>
+                        <span class="badge bg-success">{{ team.region.name }}</span>
+                    </div>
+                </div>
             </div>
         </div>
         {% else %}
@@ -380,6 +480,12 @@
                         </div>
                     </div>
                     <div class="col-6">
+                        <div class="stats-card">
+                            <div class="h4 text-success mb-1">{{ region_count|default:0 }}</div>
+                            <div class="small text-muted">Доступные регионы</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
                         <div class="stats-card">
                             <div class="h4 text-info mb-1">{{ total_callbacks|default:0 }}</div>
                             <div class="small text-muted">Всего вызовов</div>
@@ -422,6 +528,26 @@
 
             <div class="mb-3">
                 <h6 class="h6">
+                    <i class="bi bi-geo-alt text-success me-2"></i> Выбор региона
+                </h6>
+                <ul class="small mb-0 list-unstyled">
+                    <li class="mb-1">
+                        <i class="bi bi-arrow-right text-muted me-2"></i>
+                        Выберите регион, где базируется бригада
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-arrow-right text-muted me-2"></i>
+                        Регион определяет зону обслуживания
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-arrow-right text-muted me-2"></i>
+                        Можно создать несколько бригад в одном регионе
+                    </li>
+                </ul>
+            </div>
+
+            <div class="mb-3">
+                <h6 class="h6">
                     <i class="bi bi-file-text text-primary me-2"></i> Хорошие описания
                 </h6>
                 <ul class="small mb-0 list-unstyled">
@@ -432,10 +558,6 @@
                     <li class="mb-1">
                         <i class="bi bi-arrow-right text-muted me-2"></i>
                         Указывайте часы работы
-                    </li>
-                    <li class="mb-1">
-                        <i class="bi bi-arrow-right text-muted me-2"></i>
-                        Указывайте зоны покрытия
                     </li>
                     <li class="mb-1">
                         <i class="bi bi-arrow-right text-muted me-2"></i>
@@ -477,23 +599,30 @@
                     <h6 class="small fw-bold">Частые вопросы:</h6>
                     <ul class="small list-unstyled">
                         <li class="mb-2">
-                            <strong>В:</strong> Можно ли изменить название бригады позже?<br>
-                            <span class="text-muted">О: Да, информацию о бригаде можно обновить в любое время.</span>
+                            <strong>В:</strong> Можно ли изменить регион бригады позже?<br>
+                            <span class="text-muted">О: Да, регион можно изменить при редактировании бригады.</span>
                         </li>
                         <li class="mb-2">
                             <strong>В:</strong> Что происходит со старыми вызовами?<br>
-                            <span class="text-muted">О: Все исторические данные сохраняются при редактировании бригады.</span>
+                            <span class="text-muted">О: Все исторические данные сохраняются при редактировании.</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>В:</strong> Можно ли создать несколько бригад с одинаковым названием?<br>
+                            <span class="text-muted">О: Да, но только в разных регионах.</span>
                         </li>
                     </ul>
                 </div>
 
-                {% if user.is_staff %}
-                <div class="d-grid">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'teams:region_create' %}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-plus-circle"></i> Создать новый регион
+                    </a>
+                    {% if user.is_staff %}
                     <a href="/admin/teams/team/" class="btn btn-sm btn-outline-info" target="_blank">
                         <i class="bi bi-gear"></i> Панель администратора
                     </a>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -502,10 +631,23 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const nameInput = document.getElementById('id_name');
+    const regionSelect = document.getElementById('id_region');
     const descInput = document.getElementById('id_description');
     const form = document.getElementById('teamForm');
     const submitBtn = form.querySelector('button[type="submit"]');
     const teamPreview = document.getElementById('teamPreview');
+    const regionInfo = document.getElementById('regionInfo');
+
+    // Store region data for quick access
+    const regionData = {
+        {% for region in form.fields.region.queryset %}
+        '{{ region.id }}': {
+            name: '{{ region.name|escapejs }}',
+            code: '{{ region.code|escapejs }}',
+            description: '{{ region.description|escapejs }}'
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
 
     // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -537,11 +679,32 @@ document.addEventListener('DOMContentLoaded', function() {
         validateField(e.target);
     });
 
+    // Region selection handling
+    regionSelect.addEventListener('change', function(e) {
+        updateRegionInfo();
+        updatePreview();
+    });
+
     // Description input handling
     descInput.addEventListener('input', function(e) {
         updateCharCounter(e.target, 'descCounter', 500);
         updatePreview();
     });
+
+    // Update region info display
+    function updateRegionInfo() {
+        const selectedRegionId = regionSelect.value;
+
+        if (selectedRegionId && regionData[selectedRegionId]) {
+            const region = regionData[selectedRegionId];
+            document.getElementById('regionName').textContent = region.name;
+            document.getElementById('regionCode').textContent = region.code;
+            document.getElementById('regionDesc').textContent = region.description || 'Описание отсутствует';
+            regionInfo.style.display = 'block';
+        } else {
+            regionInfo.style.display = 'none';
+        }
+    }
 
     // Real-time validation
     function validateField(field) {
@@ -556,7 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (value.length > 100) {
                 isValid = false;
                 message = 'Название бригады должно быть короче 100 символов';
-            } else if (!/^[a-zA-Z0-9\s\-_]+$/.test(value)) {
+            } else if (!/^[a-zA-Zа-яА-Я0-9\s\-_]+$/.test(value)) {
                 isValid = false;
                 message = 'Название бригады может содержать только буквы, цифры, пробелы, дефисы и подчеркивания';
             }
@@ -586,10 +749,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Team preview
     function updatePreview() {
         const name = nameInput.value.trim();
+        const regionId = regionSelect.value;
         const desc = descInput.value.trim();
 
-        if (name.length >= 3) {
+        if (name.length >= 3 && regionId && regionData[regionId]) {
+            const region = regionData[regionId];
             document.getElementById('previewName').textContent = name;
+            document.getElementById('previewRegion').textContent = region.name;
             document.getElementById('previewDesc').textContent = desc || 'Описание отсутствует';
             teamPreview.style.display = 'block';
         } else {
@@ -618,9 +784,23 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
+        // Check if regions are available
+        if (!regionSelect.options.length || regionSelect.options.length === 1) {
+            showToast('Сначала необходимо создать регион', 'error');
+            return;
+        }
+
         // Validate all fields
         const nameValid = validateField(nameInput);
-        let isFormValid = nameValid;
+        const regionValid = regionSelect.value !== '';
+        let isFormValid = nameValid && regionValid;
+
+        if (!regionValid) {
+            regionSelect.classList.add('is-invalid');
+            showToast('Выберите регион для бригады', 'error');
+        } else {
+            regionSelect.classList.remove('is-invalid');
+        }
 
         if (!isFormValid) {
             showToast('Исправьте ошибки валидации перед отправкой', 'error');
@@ -629,8 +809,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show confirmation
         const teamName = nameInput.value.trim();
+        const selectedRegion = regionData[regionSelect.value];
         const action = "{% if team %}обновить{% else %}создать{% endif %}";
-        const confirmMsg = `Вы уверены, что хотите ${action} бригаду "${teamName}"?`;
+        const confirmMsg = `Вы уверены, что хотите ${action} бригаду "${teamName}" в регионе ${selectedRegion.name}?`;
 
         if (!confirm(confirmMsg)) {
             return;
@@ -650,6 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize character counters
     updateCharCounter(nameInput, 'nameCounter', 100);
     updateCharCounter(descInput, 'descCounter', 500);
+    updateRegionInfo();
     updatePreview();
 
     // Auto-focus first field
