@@ -2,70 +2,235 @@
 
 {% block title %}{{ title }} - Система экстренного обратного вызова{% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .stat-card {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: transform 0.2s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    .team-search-container {
+        position: relative;
+    }
+    .team-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 8px 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    .team-option {
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f3f4;
+    }
+    .team-option:hover {
+        background-color: #f8f9fa;
+    }
+    .team-option.selected {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    .region-badge {
+        background: #6f42c1;
+        color: white;
+        font-size: 0.75em;
+        padding: 0.25em 0.5em;
+        border-radius: 4px;
+        margin-right: 0.5rem;
+    }
+    .phone-input-group {
+        position: relative;
+    }
+    .phone-format-hint {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+    .priority-section {
+        border-left: 4px solid #dc3545;
+        padding-left: 1rem;
+        background: #fff5f5;
+        border-radius: 4px;
+        margin: 1rem 0;
+    }
+    .process-steps {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .step-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    .step-number {
+        background: #2196f3;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div>
         <h1><i class="bi bi-plus-circle text-success"></i> {{ title }}</h1>
         <p class="text-muted mb-0">Создать новый запрос экстренного обратного вызова</p>
     </div>
-    <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Назад
-    </a>
+    <div class="btn-group">
+        <a href="{% url 'callbacks:dashboard' %}" class="btn btn-outline-info">
+            <i class="bi bi-speedometer2"></i> Панель
+        </a>
+        <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Список
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">
-    <!-- Form -->
+    <!-- Main Form -->
     <div class="col-lg-8">
         <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h6 class="mb-0"><i class="bi bi-telephone-plus"></i> Детали запроса</h6>
+            <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white;">
+                <h6 class="mb-0"><i class="bi bi-telephone-plus"></i> Детали запроса экстренного вызова</h6>
             </div>
             <div class="card-body">
                 <form method="post" id="callbackForm">
                     {% csrf_token %}
 
-                    <div class="mb-3">
-                        <label for="id_phone_number" class="form-label fw-semibold">
-                            <i class="bi bi-telephone text-primary"></i> Номер телефона
-                        </label>
-                        {{ form.phone_number }}
-                        {% if form.phone_number.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.phone_number.errors %}{{ error }}{% endfor %}
+                    <!-- Phone Number Section -->
+                    <div class="form-section">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-telephone"></i> Контактная информация
+                        </h6>
+
+                        <div class="mb-3">
+                            <label for="id_phone_number" class="form-label fw-semibold">
+                                Номер телефона пациента <span class="text-danger">*</span>
+                            </label>
+                            <div class="phone-input-group">
+                                {{ form.phone_number }}
+                                <div class="phone-format-hint" id="phoneHint">+998</div>
                             </div>
-                        {% endif %}
-                        <div class="form-text">{{ form.phone_number.help_text }}</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="id_team" class="form-label fw-semibold">
-                            <i class="bi bi-people text-primary"></i> Экстренная бригада
-                        </label>
-                        {{ form.team }}
-                        {% if form.team.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.team.errors %}{{ error }}{% endfor %}
+                            {% if form.phone_number.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.phone_number.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Введите номер в международном формате (например: +998901234567)
                             </div>
-                        {% endif %}
-                        <div class="form-text">{{ form.team.help_text }}</div>
+                        </div>
+
+                        <!-- Phone validation feedback -->
+                        <div id="phoneValidation" class="d-none">
+                            <div class="alert alert-success alert-sm">
+                                <i class="bi bi-check-circle"></i> Номер корректен
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="alert alert-info">
-                        <h6><i class="bi bi-info-circle"></i> Что происходит дальше?</h6>
-                        <ol class="mb-0 small">
-                            <li>Система автоматически звонит пациенту</li>
-                            <li>Пациент оценивает качество обслуживания (1-5 звезд)</li>
-                            <li>Возможность перевода на оператора при необходимости</li>
-                            <li>Данные сохраняются для анализа качества</li>
-                        </ol>
+                    <!-- Team Selection Section -->
+                    <div class="form-section">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-people"></i> Выбор экстренной бригады
+                        </h6>
+
+                        <!-- Region Filter -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="regionFilter" class="form-label fw-semibold">Регион</label>
+                                <select id="regionFilter" class="form-select">
+                                    <option value="">Все регионы</option>
+                                    {% for region in regions %}
+                                        <option value="{{ region.id }}">{{ region.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="teamSearch" class="form-label fw-semibold">Поиск бригады</label>
+                                <div class="team-search-container">
+                                    <input type="text" id="teamSearch" class="form-control"
+                                           placeholder="Начните вводить название бригады...">
+                                    <div id="teamDropdown" class="team-dropdown"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden team field -->
+                        <div class="mb-3">
+                            <label for="id_team" class="form-label fw-semibold">
+                                Выбранная бригада <span class="text-danger">*</span>
+                            </label>
+                            {{ form.team }}
+                            {% if form.team.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.team.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div id="selectedTeamInfo" class="mt-2 d-none">
+                                <div class="alert alert-info alert-sm">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        <div>
+                                            <strong>Выбрана бригада:</strong>
+                                            <div id="teamInfoDisplay"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="d-flex justify-content-between">
+                    <!-- Priority Section -->
+                    <div class="priority-section">
+                        <h6 class="text-danger mb-2">
+                            <i class="bi bi-exclamation-triangle"></i> Важно!
+                        </h6>
+                        <ul class="small mb-0">
+                            <li>Убедитесь, что номер телефона корректен</li>
+                            <li>Система немедленно позвонит после создания запроса</li>
+                            <li>Выберите подходящую бригаду для типа вызова</li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between mt-4">
                         <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x-circle"></i> Отмена
+                            <i class="bi bi-arrow-left"></i> Назад к списку
                         </a>
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-telephone-outbound"></i> Создать запрос
+                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                            <i class="bi bi-telephone-outbound"></i> Создать экстренный вызов
                         </button>
                     </div>
                 </form>
@@ -75,62 +240,111 @@
 
     <!-- Sidebar -->
     <div class="col-lg-4">
-        <!-- Today's Stats -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-bar-chart text-info"></i> Сегодня</h6>
+        <!-- Today's Statistics -->
+        <div class="card stat-card mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0"><i class="bi bi-bar-chart text-info"></i> Статистика за сегодня</h6>
             </div>
             <div class="card-body">
                 <div class="row g-3 text-center">
                     <div class="col-6">
-                        <div class="h4 text-primary">{{ today_calls|default:0 }}</div>
-                        <div class="small text-muted">Вызовов</div>
+                        <div class="h4 text-primary mb-1">{{ today_calls|default:0 }}</div>
+                        <div class="small text-muted">Всего вызовов</div>
                     </div>
                     <div class="col-6">
-                        <div class="h4 text-success">{{ today_completed|default:0 }}</div>
+                        <div class="h4 text-success mb-1">{{ today_completed|default:0 }}</div>
                         <div class="small text-muted">Завершено</div>
                     </div>
                     <div class="col-6">
-                        <div class="h4 text-warning">{{ today_ratings|default:0 }}</div>
-                        <div class="small text-muted">Оценок</div>
+                        <div class="h4 text-warning mb-1">{{ today_ratings|default:0 }}</div>
+                        <div class="small text-muted">Получено оценок</div>
                     </div>
                     <div class="col-6">
-                        <div class="h4 text-info">{{ today_success_rate|default:0 }}%</div>
+                        <div class="h4 text-info mb-1">{{ today_success_rate|default:0 }}%</div>
                         <div class="small text-muted">Успешность</div>
+                    </div>
+                </div>
+
+                {% if today_calls > 0 %}
+                <div class="mt-3 pt-3 border-top">
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ today_success_rate }}%"></div>
+                    </div>
+                    <div class="small text-muted text-center mt-1">
+                        Показатель успешности: {{ today_success_rate }}%
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Process Information -->
+        <div class="card stat-card mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0"><i class="bi bi-gear text-primary"></i> Процесс обратного вызова</h6>
+            </div>
+            <div class="card-body">
+                <div class="process-steps">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="small">Система автоматически звонит пациенту</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="small">Воспроизводится информационное сообщение</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="small">Пациент оценивает качество (1-5 звезд)</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <div class="small">Возможность перевода на оператора</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">5</div>
+                        <div class="small">Данные сохраняются для анализа</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Tips -->
-        <div class="card">
-            <div class="card-header">
+        <!-- Guidelines -->
+        <div class="card stat-card">
+            <div class="card-header bg-transparent border-0">
                 <h6 class="mb-0"><i class="bi bi-lightbulb text-warning"></i> Рекомендации</h6>
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <h6 class="small fw-semibold">Телефонные номера:</h6>
-                    <ul class="small list-unstyled">
-                        <li><i class="bi bi-check text-success"></i> Указывайте код страны (+998)</li>
-                        <li><i class="bi bi-check text-success"></i> Проверяйте номер перед отправкой</li>
-                        <li><i class="bi bi-check text-success"></i> Предпочтительны мобильные номера</li>
+                    <h6 class="small fw-semibold text-success">
+                        <i class="bi bi-telephone"></i> Номера телефонов:
+                    </h6>
+                    <ul class="small list-unstyled ms-3">
+                        <li><i class="bi bi-check2 text-success"></i> Обязательно с кодом страны (+998)</li>
+                        <li><i class="bi bi-check2 text-success"></i> Предпочтительны мобильные номера</li>
+                        <li><i class="bi bi-check2 text-success"></i> Проверьте номер дважды</li>
                     </ul>
                 </div>
 
                 <div class="mb-3">
-                    <h6 class="small fw-semibold">Оптимальное время:</h6>
-                    <ul class="small list-unstyled">
-                        <li><i class="bi bi-sun text-warning"></i> Будни: 9:00-18:00</li>
-                        <li><i class="bi bi-moon text-secondary"></i> Избегайте раннего утра</li>
+                    <h6 class="small fw-semibold text-primary">
+                        <i class="bi bi-clock"></i> Оптимальное время:
+                    </h6>
+                    <ul class="small list-unstyled ms-3">
+                        <li><i class="bi bi-sun text-warning"></i> Рабочие дни: 9:00-18:00</li>
+                        <li><i class="bi bi-moon text-info"></i> Выходные: 10:00-16:00</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> Избегайте: 07:00-09:00, 22:00-07:00</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h6 class="small fw-semibold">Система оценок:</h6>
-                    <div class="small">
-                        <div>⭐ - Очень плохо</div>
-                        <div>⭐⭐⭐ - Средне</div>
-                        <div>⭐⭐⭐⭐⭐ - Отлично</div>
+                    <h6 class="small fw-semibold text-warning">
+                        <i class="bi bi-star"></i> Система оценок:
+                    </h6>
+                    <div class="small ms-3">
+                        <div><span class="text-danger">⭐</span> - Очень плохо (требует внимания)</div>
+                        <div><span class="text-warning">⭐⭐⭐</span> - Удовлетворительно</div>
+                        <div><span class="text-success">⭐⭐⭐⭐⭐</span> - Отлично</div>
                     </div>
                 </div>
             </div>
@@ -138,45 +352,279 @@
     </div>
 </div>
 
-{% block extra_js %}
 <script>
-document.getElementById('callbackForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+// Teams data for search functionality
+let teamsData = [];
+let currentTeams = [];
 
-    const phone = document.getElementById('id_phone_number').value.trim();
-    const team = document.getElementById('id_team').value;
-    const submitBtn = this.querySelector('button[type="submit"]');
-
-    // Basic validation
-    if (!phone || !team) {
-        App.toast('Заполните все обязательные поля', 'error');
-        return;
-    }
-
-    // Confirmation
-    const teamName = document.getElementById('id_team').selectedOptions[0].text;
-    if (!confirm(`Создать запрос для ${phone}?\nБригада: ${teamName}\n\nСистема немедленно позвонит по этому номеру.`)) {
-        return;
-    }
-
-    App.loading(submitBtn, true);
-
-    setTimeout(() => {
-        this.submit();
-    }, 1000);
+// Load teams data
+document.addEventListener('DOMContentLoaded', function() {
+    loadTeamsData();
+    setupEventListeners();
 });
 
-// Phone number formatting
-document.getElementById('id_phone_number').addEventListener('input', function(e) {
+function loadTeamsData() {
+    // Extract teams data from Django template
+    const teamSelect = document.getElementById('id_team');
+    teamsData = Array.from(teamSelect.options).slice(1).map(option => ({
+        id: option.value,
+        name: option.textContent,
+        region: option.dataset.region || ''
+    }));
+    currentTeams = [...teamsData];
+}
+
+function setupEventListeners() {
+    // Phone number formatting and validation
+    const phoneInput = document.getElementById('id_phone_number');
+    phoneInput.addEventListener('input', handlePhoneInput);
+    phoneInput.addEventListener('blur', validatePhone);
+
+    // Region filter
+    document.getElementById('regionFilter').addEventListener('change', filterTeamsByRegion);
+
+    // Team search
+    const teamSearch = document.getElementById('teamSearch');
+    teamSearch.addEventListener('input', handleTeamSearch);
+    teamSearch.addEventListener('focus', showTeamDropdown);
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.team-search-container')) {
+            hideTeamDropdown();
+        }
+    });
+
+    // Form submission
+    document.getElementById('callbackForm').addEventListener('submit', handleFormSubmit);
+}
+
+function handlePhoneInput(e) {
     let value = e.target.value.replace(/[^\d+]/g, '');
 
-    // Auto-format Uzbekistan numbers
-    if (value.startsWith('9') && value.length === 9) {
-        value = '998' + value;
+    // Auto-format for Uzbekistan numbers
+    if (value.match(/^9\d{8}$/)) {
+        value = '+998' + value;
+    } else if (value.match(/^998\d{9}$/)) {
+        value = '+' + value;
+    } else if (value.match(/^\d{9}$/) && value.startsWith('9')) {
+        value = '+998' + value;
     }
 
     e.target.value = value;
+
+    // Update hint
+    const hint = document.getElementById('phoneHint');
+    if (value.length > 0) {
+        hint.style.display = 'none';
+    } else {
+        hint.style.display = 'block';
+    }
+
+    // Real-time validation
+    validatePhone();
+}
+
+function validatePhone() {
+    const phoneInput = document.getElementById('id_phone_number');
+    const validation = document.getElementById('phoneValidation');
+    const value = phoneInput.value;
+
+    // Uzbekistan phone number pattern
+    const uzPattern = /^\+998[0-9]{9}$/;
+
+    if (value && uzPattern.test(value)) {
+        phoneInput.classList.remove('is-invalid');
+        phoneInput.classList.add('is-valid');
+        validation.className = 'alert alert-success alert-sm';
+        validation.innerHTML = '<i class="bi bi-check-circle"></i> Номер телефона корректен';
+        validation.classList.remove('d-none');
+    } else if (value) {
+        phoneInput.classList.remove('is-valid');
+        phoneInput.classList.add('is-invalid');
+        validation.className = 'alert alert-danger alert-sm';
+        validation.innerHTML = '<i class="bi bi-x-circle"></i> Некорректный формат номера';
+        validation.classList.remove('d-none');
+    } else {
+        phoneInput.classList.remove('is-valid', 'is-invalid');
+        validation.classList.add('d-none');
+    }
+}
+
+function filterTeamsByRegion() {
+    const regionId = document.getElementById('regionFilter').value;
+
+    // Filter teams by region (you'll need to add region data to team options)
+    if (regionId) {
+        // Fetch teams by region via AJAX
+        fetch(`/callbacks/get-teams-by-region/?region_id=${regionId}`)
+            .then(response => response.json())
+            .then(data => {
+                currentTeams = data.teams;
+                updateTeamDropdown('');
+            });
+    } else {
+        currentTeams = [...teamsData];
+        updateTeamDropdown('');
+    }
+
+    // Clear current selection if it's not in filtered teams
+    const selectedTeamId = document.getElementById('id_team').value;
+    if (selectedTeamId && !currentTeams.find(t => t.id == selectedTeamId)) {
+        clearTeamSelection();
+    }
+}
+
+function handleTeamSearch(e) {
+    const query = e.target.value.toLowerCase();
+    updateTeamDropdown(query);
+    showTeamDropdown();
+}
+
+function updateTeamDropdown(query) {
+    const dropdown = document.getElementById('teamDropdown');
+
+    let filteredTeams = currentTeams;
+    if (query) {
+        filteredTeams = currentTeams.filter(team =>
+            team.name.toLowerCase().includes(query)
+        );
+    }
+
+    if (filteredTeams.length === 0) {
+        dropdown.innerHTML = '<div class="team-option text-muted">Бригады не найдены</div>';
+    } else {
+        dropdown.innerHTML = filteredTeams.map(team => `
+            <div class="team-option" data-team-id="${team.id}">
+                <div class="d-flex align-items-center">
+                    ${team.region ? `<span class="region-badge">${team.region}</span>` : ''}
+                    <span>${team.name}</span>
+                </div>
+            </div>
+        `).join('');
+
+        // Add click handlers
+        dropdown.querySelectorAll('.team-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const teamId = this.dataset.teamId;
+                if (teamId) {
+                    selectTeam(teamId);
+                }
+            });
+        });
+    }
+}
+
+function selectTeam(teamId) {
+    const team = currentTeams.find(t => t.id == teamId);
+    if (team) {
+        document.getElementById('id_team').value = teamId;
+        document.getElementById('teamSearch').value = team.name;
+
+        // Show selection info
+        const infoDisplay = document.getElementById('teamInfoDisplay');
+        infoDisplay.innerHTML = `
+            ${team.region ? `<span class="region-badge">${team.region}</span>` : ''}
+            <strong>${team.name}</strong>
+        `;
+        document.getElementById('selectedTeamInfo').classList.remove('d-none');
+
+        hideTeamDropdown();
+    }
+}
+
+function clearTeamSelection() {
+    document.getElementById('id_team').value = '';
+    document.getElementById('teamSearch').value = '';
+    document.getElementById('selectedTeamInfo').classList.add('d-none');
+}
+
+function showTeamDropdown() {
+    document.getElementById('teamDropdown').style.display = 'block';
+}
+
+function hideTeamDropdown() {
+    document.getElementById('teamDropdown').style.display = 'none';
+}
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+
+    const phone = document.getElementById('id_phone_number').value.trim();
+    const teamId = document.getElementById('id_team').value;
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Validation
+    if (!phone) {
+        showAlert('Пожалуйста, введите номер телефона', 'error');
+        document.getElementById('id_phone_number').focus();
+        return;
+    }
+
+    if (!teamId) {
+        showAlert('Пожалуйста, выберите экстренную бригаду', 'error');
+        document.getElementById('teamSearch').focus();
+        return;
+    }
+
+    // Phone format validation
+    const uzPattern = /^\+998[0-9]{9}$/;
+    if (!uzPattern.test(phone)) {
+        showAlert('Пожалуйста, введите корректный номер телефона в формате +998XXXXXXXXX', 'error');
+        document.getElementById('id_phone_number').focus();
+        return;
+    }
+
+    // Get team info for confirmation
+    const team = currentTeams.find(t => t.id == teamId);
+    const teamInfo = team ? `${team.region ? team.region + ' - ' : ''}${team.name}` : 'Выбранная бригада';
+
+    // Confirmation dialog
+    const confirmed = confirm(`🚨 СОЗДАНИЕ ЭКСТРЕННОГО ВЫЗОВА 🚨\n\n` +
+        `Номер телефона: ${phone}\n` +
+        `Бригада: ${teamInfo}\n\n` +
+        `⚠️ ВНИМАНИЕ: Система немедленно позвонит по указанному номеру!\n\n` +
+        `Подтвердить создание вызова?`);
+
+    if (!confirmed) {
+        return;
+    }
+
+    // Show loading state
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Создание вызова...';
+    submitBtn.disabled = true;
+
+    // Submit form after brief delay
+    setTimeout(() => {
+        document.getElementById('callbackForm').submit();
+    }, 1000);
+}
+
+function showAlert(message, type = 'info') {
+    // Create and show bootstrap alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <i class="bi bi-${type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    // Insert at top of form
+    const form = document.getElementById('callbackForm');
+    form.insertBefore(alertDiv, form.firstChild);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Initialize team search dropdown on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateTeamDropdown('');
 });
 </script>
-{% endblock %}
 {% endblock %}

@@ -70,6 +70,31 @@
         padding: 1.5rem;
         margin-bottom: 1.5rem;
     }
+
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .region-badge {
+        background: #6f42c1;
+        color: white;
+        font-size: 0.75em;
+        padding: 0.25em 0.5em;
+        border-radius: 4px;
+        margin-bottom: 2px;
+    }
+
+    .filter-badge {
+        background: #007bff;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        margin-left: 8px;
+    }
 </style>
 {% endblock %}
 
@@ -79,12 +104,20 @@
         <h1 class="h2 mb-1">
             <i class="bi bi-star text-warning"></i> Оценки и отзывы
         </h1>
-        <p class="text-muted mb-0">Мониторинг качества обслуживания и удовлетворенности пациентов</p>
+        <p class="text-muted mb-0">
+            Мониторинг качества обслуживания и удовлетворенности пациентов
+            {% if current_region or current_team or current_rating or date_from or date_to %}
+                <span class="filter-badge">Фильтры активны</span>
+            {% endif %}
+        </p>
     </div>
     <div class="btn-toolbar">
         <div class="btn-group me-2">
+            <a href="{% url 'callbacks:dashboard' %}" class="btn btn-outline-info">
+                <i class="bi bi-speedometer2"></i> Панель
+            </a>
             <button class="btn btn-outline-primary" onclick="exportRatings()">
-                <i class="bi bi-download"></i> Экспорт данных
+                <i class="bi bi-download"></i> Экспорт
             </button>
         </div>
         <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
@@ -93,23 +126,30 @@
     </div>
 </div>
 
-<!-- Filters -->
-<div class="card mb-4">
-    <div class="card-header bg-transparent border-0">
-        <h6 class="card-title mb-0">
-            <i class="bi bi-funnel text-primary"></i> Фильтры и период анализа
-        </h6>
-    </div>
-    <div class="card-body">
-        <form method="get" class="row g-3">
+<!-- Enhanced Filters -->
+<div class="filter-section">
+    <form method="get" id="filterForm">
+        <div class="row g-3">
+            <div class="col-lg-2 col-md-3">
+                <label for="region" class="form-label fw-semibold">Регион</label>
+                <select name="region" id="region" class="form-select">
+                    <option value="">Все регионы</option>
+                    {% for region in regions %}
+                        <option value="{{ region.id }}" {% if current_region == region.id|stringformat:"s" %}selected{% endif %}>
+                            {{ region.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="col-lg-2 col-md-3">
                 <label for="team" class="form-label fw-semibold">Бригада</label>
                 <select name="team" id="team" class="form-select">
                     <option value="">Все бригады</option>
                     {% for team in teams %}
-                    <option value="{{ team.id }}" {% if team.id|stringformat:"s" == current_team %}selected{% endif %}>
-                        {{ team.name }}
-                    </option>
+                        <option value="{{ team.id }}" {% if current_team == team.id|stringformat:"s" %}selected{% endif %}>
+                            {{ team.name }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
@@ -136,25 +176,30 @@
                 <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
             </div>
 
-            <div class="col-lg-2 col-md-6">
-                <label class="form-label"> </label>
-                <div class="d-grid gap-2">
+            <div class="col-lg-2 col-md-3 d-flex align-items-end">
+                <div class="btn-group w-100">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-search"></i> Применить
+                        <i class="bi bi-funnel"></i>
                     </button>
-                </div>
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="form-label"> </label>
-                <div class="d-grid gap-2">
                     <a href="{% url 'callbacks:ratings' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Очистить
+                        <i class="bi bi-x-circle"></i>
                     </a>
                 </div>
             </div>
-        </form>
-    </div>
+        </div>
+
+        <!-- Quick Date Filters -->
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('today')">Сегодня</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('yesterday')">Вчера</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('week')">7 дней</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('month')">30 дней</button>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- Statistics Overview -->
@@ -235,7 +280,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h6 class="card-title mb-0">
                 <i class="bi bi-list-ul text-primary"></i> Детали оценок
-                {% if current_team or current_rating or date_from or date_to %}
+                {% if current_region or current_team or current_rating or date_from or date_to %}
                     <span class="badge bg-info ms-2">Отфильтровано</span>
                 {% endif %}
             </h6>
@@ -255,7 +300,7 @@
                     <tr>
                         <th class="border-0 ps-3">Оценка</th>
                         <th class="border-0">Контакт</th>
-                        <th class="border-0">Бригада</th>
+                        <th class="border-0">Регион/Бригада</th>
                         <th class="border-0">Дата и время</th>
                         <th class="border-0">Детали вызова</th>
                         <th class="border-0 pe-3 text-center">Действия</th>
@@ -283,7 +328,9 @@
                                         {% endif %}">
                                         {{ rating.rating }}/5
                                     </span>
-                                    <div class="small text-muted mt-1">{{ rating.rating_text }}</div>
+                                    {% if rating.rating_text %}
+                                        <div class="small text-muted mt-1">{{ rating.rating_text|truncatechars:30 }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </td>
@@ -297,10 +344,12 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge bg-info bg-opacity-10 text-info border border-info team-badge">
-                                {{ rating.team.name }}
-                            </span>
-                            <div class="small text-muted mt-1">ID: {{ rating.team.id }}</div>
+                            <div>
+                                <div class="region-badge">{{ rating.team.region.name }}</div>
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info team-badge">
+                                    {{ rating.team.name }}
+                                </span>
+                            </div>
                         </td>
                         <td>
                             <div class="small">
@@ -314,14 +363,12 @@
                                     <span class="badge bg-light text-dark mb-1">
                                         {{ rating.callback_request.get_status_display }}
                                     </span>
-                                    {% if rating.callback_request.call_started_at and rating.callback_request.call_ended_at %}
-                                        {% with duration=rating.callback_request.call_ended_at|timesince:rating.callback_request.call_started_at %}
-                                        <div class="text-muted">
-                                            <i class="bi bi-clock"></i> {{ duration }}
+                                    {% if rating.callback_request.call_duration %}
+                                        <div class="text-success">
+                                            <i class="bi bi-clock"></i> {{ rating.callback_request.call_duration }}с
                                         </div>
-                                        {% endwith %}
                                     {% endif %}
-                                    {% if rating.callback_request.transferred %}
+                                    {% if rating.callback_request.status == 'transferred' %}
                                         <div class="text-info">
                                             <i class="bi bi-arrow-right-square"></i> Переведено
                                         </div>
@@ -340,7 +387,7 @@
                                 </a>
                                 {% endif %}
                                 <button class="btn btn-outline-info"
-                                        onclick="showRatingDetails({{ rating.id }}, '{{ rating.phone_number }}', '{{ rating.team.name }}', {{ rating.rating }}, '{{ rating.timestamp|date:"d M, H:i" }}')"
+                                        onclick="showRatingDetails({{ rating.id }}, '{{ rating.phone_number }}', '{{ rating.team.region.name }}', '{{ rating.team.name }}', {{ rating.rating }}, '{{ rating.timestamp|date:"d M, H:i" }}', '{{ rating.rating_text|default:"" }}')"
                                         title="Детали оценки">
                                     <i class="bi bi-info-circle"></i>
                                 </button>
@@ -379,20 +426,20 @@
             <i class="bi bi-star display-1 text-muted"></i>
             <div class="mt-3">
                 <h5 class="text-muted">
-                    {% if current_team or current_rating or date_from or date_to %}
+                    {% if current_region or current_team or current_rating or date_from or date_to %}
                         Не найдено оценок, соответствующих вашим фильтрам
                     {% else %}
                         Оценки еще не собраны
                     {% endif %}
                 </h5>
                 <p class="text-muted mb-4">
-                    {% if current_team or current_rating or date_from or date_to %}
+                    {% if current_region or current_team or current_rating or date_from or date_to %}
                         Попробуйте изменить критерии фильтрации или расширить диапазон дат
                     {% else %}
                         Оценки появятся здесь после того, как пациенты предоставят отзывы через запросы обратного вызова
                     {% endif %}
                 </p>
-                {% if not current_team and not current_rating and not date_from and not date_to %}
+                {% if not current_region and not current_team and not current_rating and not date_from and not date_to %}
                 <a href="{% url 'callbacks:create' %}" class="btn btn-primary btn-lg">
                     <i class="bi bi-plus-circle"></i> Создать первый вызов
                 </a>
@@ -433,6 +480,64 @@
 </div>
 
 <script>
+// Region/Team cascade filter
+document.getElementById('region').addEventListener('change', function() {
+    const regionId = this.value;
+    const teamSelect = document.getElementById('team');
+
+    // Clear team options
+    teamSelect.innerHTML = '<option value="">Все бригады</option>';
+
+    if (regionId) {
+        fetch(`/callbacks/get-teams-by-region/?region_id=${regionId}`)
+            .then(response => response.json())
+            .then(data => {
+                data.teams.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team.id;
+                    option.textContent = team.name;
+                    teamSelect.appendChild(option);
+                });
+            });
+    }
+});
+
+// Quick date range functions
+function setDateRange(range) {
+    const today = new Date();
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+
+    switch(range) {
+        case 'today':
+            const todayStr = today.toISOString().split('T')[0];
+            dateFrom.value = todayStr;
+            dateTo.value = todayStr;
+            break;
+        case 'yesterday':
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            dateFrom.value = yesterdayStr;
+            dateTo.value = yesterdayStr;
+            break;
+        case 'week':
+            const weekAgo = new Date(today);
+            weekAgo.setDate(today.getDate() - 7);
+            dateFrom.value = weekAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+        case 'month':
+            const monthAgo = new Date(today);
+            monthAgo.setDate(today.getDate() - 30);
+            dateFrom.value = monthAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+    }
+
+    document.getElementById('filterForm').submit();
+}
+
 function exportRatings() {
     // Get current filter parameters
     const params = new URLSearchParams(window.location.search);
@@ -448,11 +553,47 @@ function exportRatings() {
     setTimeout(() => {
         btn.innerHTML = originalText;
         btn.disabled = false;
-        showToast('Функция экспорта будет реализована здесь', 'info');
+        // Create a simple CSV download
+        const csvContent = generateCSV();
+        downloadCSV(csvContent, 'ratings-export.csv');
     }, 2000);
 }
 
-function showRatingDetails(ratingId, phone, team, rating, timestamp) {
+function generateCSV() {
+    const rows = document.querySelectorAll('tbody tr');
+    let csv = 'Оценка,Телефон,Регион,Бригада,Дата,Время,Статус\n';
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > 0) {
+            const rating = cells[0].querySelector('.badge').textContent.trim();
+            const phone = cells[1].querySelector('.fw-semibold').textContent.trim();
+            const region = cells[2].querySelector('.region-badge').textContent.trim();
+            const team = cells[2].querySelector('.team-badge').textContent.trim();
+            const date = cells[3].querySelector('.fw-semibold').textContent.trim();
+            const time = cells[3].querySelector('.text-muted').textContent.trim();
+            const status = cells[4].querySelector('.badge')?.textContent.trim() || 'Н/Д';
+
+            csv += `"${rating}","${phone}","${region}","${team}","${date}","${time}","${status}"\n`;
+        }
+    });
+
+    return csv;
+}
+
+function downloadCSV(csvContent, filename) {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function showRatingDetails(ratingId, phone, region, team, rating, timestamp, ratingText) {
     const modalBody = document.getElementById('ratingModalBody');
 
     // Generate star display
@@ -468,6 +609,7 @@ function showRatingDetails(ratingId, phone, team, rating, timestamp) {
             <div class="mb-3">${stars}</div>
             <h3 class="text-warning">${rating}/5 Звезд</h3>
             <p class="text-muted">${getRatingText(rating)}</p>
+            ${ratingText ? `<div class="alert alert-info"><strong>Комментарий:</strong> ${ratingText}</div>` : ''}
         </div>
         <div class="row g-3">
             <div class="col-6">
@@ -481,12 +623,20 @@ function showRatingDetails(ratingId, phone, team, rating, timestamp) {
             <div class="col-6">
                 <div class="card bg-light">
                     <div class="card-body">
+                        <h6 class="card-title">Регион</h6>
+                        <p class="mb-0">${region}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card bg-light">
+                    <div class="card-body">
                         <h6 class="card-title">Бригада</h6>
                         <p class="mb-0">${team}</p>
                     </div>
                 </div>
             </div>
-            <div class="col-12">
+            <div class="col-6">
                 <div class="card bg-light">
                     <div class="card-body">
                         <h6 class="card-title">Временная метка</h6>
@@ -513,19 +663,23 @@ function getRatingText(rating) {
     return texts[rating] || 'Неизвестная оценка';
 }
 
-// Set default date range (last 30 days)
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    const lastMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+// Auto-submit filters on change (except date)
+document.querySelectorAll('#region, #team, #rating').forEach(element => {
+    element.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+});
 
+// Set default date range if not specified
+document.addEventListener('DOMContentLoaded', function() {
     const dateFrom = document.getElementById('date_from');
     const dateTo = document.getElementById('date_to');
 
-    if (!dateFrom.value) {
-        dateFrom.value = lastMonth.toISOString().split('T')[0];
-    }
+    if (!dateFrom.value && !dateTo.value) {
+        const today = new Date();
+        const lastMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    if (!dateTo.value) {
+        dateFrom.value = lastMonth.toISOString().split('T')[0];
         dateTo.value = today.toISOString().split('T')[0];
     }
 });
