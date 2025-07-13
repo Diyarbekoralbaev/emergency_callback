@@ -9,39 +9,78 @@ from datetime import datetime, timedelta
 from .models import CallbackRequest, Rating, CallStatus
 from .forms import CallbackRequestForm
 from .tasks import fixed_process_callback_call as process_callback_call
-from teams.models import Team
+from teams.models import Team, Region
 
 
 @login_required
 def dashboard(request):
-    # Today's stats
-    today = timezone.now().date()
+    # Get filter parameters
+    region_filter = request.GET.get('region', '')
+    team_filter = request.GET.get('team', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    status_filter = request.GET.get('status', '')
 
-    # Call stats
-    total_calls_today = CallbackRequest.objects.filter(created_at__date=today).count()
-    completed_calls_today = CallbackRequest.objects.filter(
-        created_at__date=today,
+    # Default date range (today if no filters)
+    if not date_from and not date_to:
+        today = timezone.now().date()
+        date_from = today
+        date_to = today
+    else:
+        if date_from:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+        else:
+            date_from = timezone.now().date() - timedelta(days=30)  # Default to last 30 days
+
+        if date_to:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+        else:
+            date_to = timezone.now().date()
+
+    # Base querysets with date filtering
+    callbacks_qs = CallbackRequest.objects.filter(
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to
+    )
+
+    ratings_qs = Rating.objects.filter(
+        date__gte=date_from,
+        date__lte=date_to
+    )
+
+    # Apply region filter
+    if region_filter:
+        callbacks_qs = callbacks_qs.filter(team__region_id=region_filter)
+        ratings_qs = ratings_qs.filter(team__region_id=region_filter)
+
+    # Apply team filter
+    if team_filter:
+        callbacks_qs = callbacks_qs.filter(team_id=team_filter)
+        ratings_qs = ratings_qs.filter(team_id=team_filter)
+
+    # Apply status filter
+    if status_filter:
+        callbacks_qs = callbacks_qs.filter(status=status_filter)
+
+    # Call statistics
+    total_calls = callbacks_qs.count()
+    completed_calls = callbacks_qs.filter(
         status__in=[CallStatus.COMPLETED, CallStatus.TRANSFERRED]
     ).count()
-    failed_calls_today = CallbackRequest.objects.filter(
-        created_at__date=today,
-        status=CallStatus.FAILED
-    ).count()
-    pending_calls_today = CallbackRequest.objects.filter(
-        created_at__date=today,
+    failed_calls = callbacks_qs.filter(status=CallStatus.FAILED).count()
+    pending_calls = callbacks_qs.filter(
         status__in=[CallStatus.PENDING, CallStatus.DIALING, CallStatus.CONNECTING]
     ).count()
 
-    # Rating stats
-    ratings_today = Rating.objects.filter(date=today)
-    total_ratings_today = ratings_today.count()
-    avg_rating_today = ratings_today.aggregate(Avg('rating'))['rating__avg'] or 0
+    # Rating statistics
+    total_ratings = ratings_qs.count()
+    avg_rating = ratings_qs.aggregate(Avg('rating'))['rating__avg'] or 0
 
-    # Fixed rating distribution - ensure all ratings 1-5 are shown
+    # Rating distribution - ensure all ratings 1-5 are shown
     rating_distribution = []
     for i in range(1, 6):
-        count = ratings_today.filter(rating=i).count()
-        percentage = (count / total_ratings_today * 100) if total_ratings_today > 0 else 0
+        count = ratings_qs.filter(rating=i).count()
+        percentage = (count / total_ratings * 100) if total_ratings > 0 else 0
         rating_distribution.append({
             'rating': i,
             'count': count,
@@ -50,23 +89,126 @@ def dashboard(request):
 
     # Success rate calculation
     success_rate = 0
-    if total_calls_today > 0:
-        success_rate = round((completed_calls_today / total_calls_today) * 100, 1)
+    if total_calls > 0:
+        success_rate = round((completed_calls / total_calls) * 100, 1)
 
-    # Recent calls with ratings info
-    recent_calls = CallbackRequest.objects.select_related('team', 'requested_by').prefetch_related('rating').order_by(
-        '-created_at')[:10]
+    # Recent calls with ratings info (respecting filters)
+    recent_calls_qs = callbacks_qs.select_related('team', 'team__region', 'requested_by').prefetch_related('rating')
+    recent_calls = recent_calls_qs.order_by('-created_at')[:15]
+
+    # Additional statistics for filtered period
+    # Daily breakdown for chart (last 7 days within filter range)
+    daily_stats = []
+    chart_start_date = max(date_from, timezone.now().date() - timedelta(days=6))
+    chart_end_date = min(date_to, timezone.now().date())
+
+    current_date = chart_start_date
+    while current_date <= chart_end_date:
+        day_calls = callbacks_qs.filter(created_at__date=current_date)
+        day_completed = day_calls.filter(status__in=[CallStatus.COMPLETED, CallStatus.TRANSFERRED]).count()
+        day_total = day_calls.count()
+        day_success_rate = (day_completed / day_total * 100) if day_total > 0 else 0
+
+        daily_stats.append({
+            'date': current_date.strftime('%m-%d'),
+            'total_calls': day_total,
+            'completed_calls': day_completed,
+            'success_rate': round(day_success_rate, 1)
+        })
+        current_date += timedelta(days=1)
+
+    # Team performance breakdown
+    team_stats = []
+    if region_filter or team_filter:
+        # Show individual team stats when filtered
+        teams_qs = Team.objects.filter(is_active=True)
+        if region_filter:
+            teams_qs = teams_qs.filter(region_id=region_filter)
+        if team_filter:
+            teams_qs = teams_qs.filter(id=team_filter)
+
+        for team in teams_qs[:10]:  # Limit to top 10 teams
+            team_calls = callbacks_qs.filter(team=team)
+            team_total = team_calls.count()
+            team_completed = team_calls.filter(status__in=[CallStatus.COMPLETED, CallStatus.TRANSFERRED]).count()
+            team_ratings = ratings_qs.filter(team=team)
+            team_avg_rating = team_ratings.aggregate(Avg('rating'))['rating__avg'] or 0
+
+            if team_total > 0:  # Only show teams with calls
+                team_stats.append({
+                    'team': team,
+                    'total_calls': team_total,
+                    'completed_calls': team_completed,
+                    'success_rate': round((team_completed / team_total * 100), 1),
+                    'avg_rating': round(team_avg_rating, 1),
+                    'total_ratings': team_ratings.count()
+                })
+    else:
+        # Show region stats when no specific filter
+        for region in Region.objects.filter(is_active=True)[:5]:
+            region_calls = callbacks_qs.filter(team__region=region)
+            region_total = region_calls.count()
+            region_completed = region_calls.filter(status__in=[CallStatus.COMPLETED, CallStatus.TRANSFERRED]).count()
+            region_ratings = ratings_qs.filter(team__region=region)
+            region_avg_rating = region_ratings.aggregate(Avg('rating'))['rating__avg'] or 0
+
+            if region_total > 0:  # Only show regions with calls
+                team_stats.append({
+                    'team': region,  # Using same template structure
+                    'total_calls': region_total,
+                    'completed_calls': region_completed,
+                    'success_rate': round((region_completed / region_total * 100), 1),
+                    'avg_rating': round(region_avg_rating, 1),
+                    'total_ratings': region_ratings.count()
+                })
+
+    # Sort team stats by total calls
+    team_stats.sort(key=lambda x: x['total_calls'], reverse=True)
+
+    # For filter dropdowns
+    regions = Region.objects.filter(is_active=True).order_by('name')
+    teams = Team.objects.filter(is_active=True).select_related('region').order_by('region__name', 'name')
+    if region_filter:
+        teams = teams.filter(region_id=region_filter)
+
+    # Calculate period description for display
+    if date_from == date_to:
+        if date_from == timezone.now().date():
+            period_description = "Сегодня"
+        else:
+            period_description = f"За {date_from.strftime('%d.%m.%Y')}"
+    else:
+        period_description = f"С {date_from.strftime('%d.%m.%Y')} по {date_to.strftime('%d.%m.%Y')}"
 
     context = {
-        'total_calls_today': total_calls_today,
-        'completed_calls_today': completed_calls_today,
-        'failed_calls_today': failed_calls_today,
-        'pending_calls_today': pending_calls_today,
-        'total_ratings_today': total_ratings_today,
-        'avg_rating_today': round(avg_rating_today, 1),
+        'total_calls': total_calls,
+        'completed_calls': completed_calls,
+        'failed_calls': failed_calls,
+        'pending_calls': pending_calls,
+        'total_ratings': total_ratings,
+        'avg_rating': round(avg_rating, 1),
         'success_rate': success_rate,
         'rating_distribution': rating_distribution,
         'recent_calls': recent_calls,
+        'daily_stats': daily_stats,
+        'team_stats': team_stats,
+
+        # Filter data
+        'regions': regions,
+        'teams': teams,
+        'statuses': CallStatus.choices,
+        'current_region': region_filter,
+        'current_team': team_filter,
+        'current_status': status_filter,
+        'date_from': date_from.strftime('%Y-%m-%d'),
+        'date_to': date_to.strftime('%Y-%m-%d'),
+        'period_description': period_description,
+
+        # Additional context
+        'has_filters': bool(region_filter or team_filter or status_filter or
+                            request.GET.get('date_from') or request.GET.get('date_to')),
+        'filter_count': sum([bool(region_filter), bool(team_filter), bool(status_filter),
+                             bool(request.GET.get('date_from')), bool(request.GET.get('date_to'))]),
     }
 
     return render(request, 'callbacks/dashboard.html', context)
@@ -76,38 +218,58 @@ def dashboard(request):
 def callback_list(request):
     status_filter = request.GET.get('status', '')
     team_filter = request.GET.get('team', '')
+    region_filter = request.GET.get('region', '')
     search = request.GET.get('search', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
 
-    callbacks = CallbackRequest.objects.select_related('team', 'requested_by').order_by('-created_at')
+    callbacks = CallbackRequest.objects.select_related('team', 'team__region', 'requested_by').order_by('-created_at')
 
+    # Apply filters
     if status_filter:
         callbacks = callbacks.filter(status=status_filter)
 
-    # Fixed team filter bug
     if team_filter:
         callbacks = callbacks.filter(team_id=team_filter)
+
+    if region_filter:
+        callbacks = callbacks.filter(team__region_id=region_filter)
 
     if search:
         callbacks = callbacks.filter(
             Q(phone_number__icontains=search) |
-            Q(team__name__icontains=search)
+            Q(team__name__icontains=search) |
+            Q(team__region__name__icontains=search)
         )
 
+    if date_from:
+        callbacks = callbacks.filter(created_at__date__gte=date_from)
+
+    if date_to:
+        callbacks = callbacks.filter(created_at__date__lte=date_to)
+
     # For filters
-    teams = Team.objects.filter(is_active=True)
+    regions = Region.objects.filter(is_active=True).order_by('name')
+    teams = Team.objects.filter(is_active=True).select_related('region').order_by('region__name', 'name')
+    if region_filter:
+        teams = teams.filter(region_id=region_filter)
     statuses = CallStatus.choices
 
     # Pagination-like limit
     total_count = callbacks.count()
-    callbacks = callbacks[:50]  # Limit to 50 for performance
+    callbacks = callbacks[:100]  # Increased limit
 
     context = {
         'callbacks': callbacks,
+        'regions': regions,
         'teams': teams,
         'statuses': statuses,
         'current_status': status_filter,
         'current_team': team_filter,
+        'current_region': region_filter,
         'search': search,
+        'date_from': date_from,
+        'date_to': date_to,
         'total_count': total_count,
         'showing_count': len(callbacks),
     }
@@ -127,15 +289,18 @@ def callback_create(request):
             # Process call asynchronously
             process_callback_call.delay(callback.id)
 
-            messages.success(request, f'Callback request created! Calling {callback.phone_number}...')
+            messages.success(request, f'Экстренный вызов создан! Звоним на номер {callback.phone_number}...')
             return redirect('callbacks:list')
     else:
         form = CallbackRequestForm()
 
-    # Quick stats for the form page
+    # Quick stats for the form page (today only)
     today = timezone.now().date()
     today_calls = CallbackRequest.objects.filter(created_at__date=today).count()
-    today_completed = CallbackRequest.objects.filter(created_at__date=today, status=CallStatus.COMPLETED).count()
+    today_completed = CallbackRequest.objects.filter(
+        created_at__date=today,
+        status__in=[CallStatus.COMPLETED, CallStatus.TRANSFERRED]
+    ).count()
     today_ratings = Rating.objects.filter(date=today).count()
 
     # Calculate success rate for the form page
@@ -143,13 +308,19 @@ def callback_create(request):
     if today_calls > 0:
         today_success_rate = round((today_completed / today_calls) * 100, 0)
 
+    # Get regions and teams for the enhanced form
+    regions = Region.objects.filter(is_active=True).order_by('name')
+    teams = Team.objects.filter(is_active=True).select_related('region').order_by('region__name', 'name')
+
     context = {
         'form': form,
-        'title': 'Create Callback Request',
+        'title': 'Создать экстренный вызов',
         'today_calls': today_calls,
         'today_completed': today_completed,
         'today_ratings': today_ratings,
         'today_success_rate': today_success_rate,
+        'regions': regions,
+        'teams': teams,
     }
 
     return render(request, 'callbacks/form.html', context)
@@ -177,15 +348,19 @@ def callback_detail(request, pk):
 @login_required
 def ratings_list(request):
     team_filter = request.GET.get('team', '')
+    region_filter = request.GET.get('region', '')
     rating_filter = request.GET.get('rating', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
 
-    ratings = Rating.objects.select_related('team', 'callback_request').order_by('-timestamp')
+    ratings = Rating.objects.select_related('team', 'team__region', 'callback_request').order_by('-timestamp')
 
-    # Fixed team filter bug
+    # Apply filters
     if team_filter:
         ratings = ratings.filter(team_id=team_filter)
+
+    if region_filter:
+        ratings = ratings.filter(team__region_id=region_filter)
 
     if rating_filter:
         ratings = ratings.filter(rating=rating_filter)
@@ -215,15 +390,20 @@ def ratings_list(request):
     good_percentage = (good_ratings / total_ratings * 100) if total_ratings > 0 else 0
 
     # For filters
-    teams = Team.objects.filter(is_active=True)
+    regions = Region.objects.filter(is_active=True).order_by('name')
+    teams = Team.objects.filter(is_active=True).select_related('region').order_by('region__name', 'name')
+    if region_filter:
+        teams = teams.filter(region_id=region_filter)
 
     # Limit for performance
     ratings_list = ratings[:100]
 
     context = {
         'ratings': ratings_list,
+        'regions': regions,
         'teams': teams,
         'current_team': team_filter,
+        'current_region': region_filter,
         'current_rating': rating_filter,
         'date_from': date_from,
         'date_to': date_to,
@@ -235,3 +415,16 @@ def ratings_list(request):
     }
 
     return render(request, 'callbacks/ratings.html', context)
+
+
+# AJAX endpoint for getting teams by region
+@login_required
+def get_teams_by_region(request):
+    region_id = request.GET.get('region_id')
+    teams = []
+
+    if region_id:
+        teams_qs = Team.objects.filter(region_id=region_id, is_active=True).order_by('name')
+        teams = [{'id': team.id, 'name': team.name} for team in teams_qs]
+
+    return JsonResponse({'teams': teams})

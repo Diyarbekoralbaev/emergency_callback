@@ -9,4 +9,6 @@ urlpatterns = [
     path('callbacks/create/', views.callback_create, name='create'),
     path('callbacks/<int:pk>/', views.callback_detail, name='detail'),
     path('ratings/', views.ratings_list, name='ratings'),
+    path('get-teams-by-region/', views.get_teams_by_region, name='get_teams_by_region'),
+
 ]
