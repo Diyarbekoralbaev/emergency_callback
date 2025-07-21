@@ -1,4 +1,7 @@
 # callbacks/views.py
+import json
+import random
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -6,6 +9,10 @@ from django.http import JsonResponse
 from django.db.models import Count, Avg, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+
 from .models import CallbackRequest, Rating, CallStatus
 from .forms import CallbackRequestForm
 from .tasks import fixed_process_callback_call as process_callback_call
@@ -428,3 +435,52 @@ def get_teams_by_region(request):
         teams = [{'id': team.id, 'name': team.name} for team in teams_qs]
 
     return JsonResponse({'teams': teams})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_callback_create(request):
+    try:
+        # Parse JSON data
+        data = json.loads(request.body)
+        phone_number = data.get('phone_number')
+
+        if not phone_number:
+            return JsonResponse({'error': 'phone_number is required'}, status=400)
+
+        # Get first user for requested_by
+        from users.models import User
+        user = User.objects.first()
+        if not user:
+            return JsonResponse({'error': 'No users found'}, status=500)
+
+        # Get random active team
+        teams = list(Team.objects.filter(is_active=True))
+        if not teams:
+            return JsonResponse({'error': 'No active teams found'}, status=500)
+
+        team = random.choice(teams)
+
+        # Create callback request
+        callback = CallbackRequest.objects.create(
+            phone_number=phone_number,
+            team=team,
+            requested_by=user
+        )
+
+        # Process call asynchronously
+        process_callback_call.delay(callback.id)
+
+        return JsonResponse({
+            'success': True,
+            'callback_id': callback.id,
+            'phone_number': callback.phone_number,
+            'team': callback.team.name,
+            'region': callback.team.region.name if hasattr(callback.team, 'region') and callback.team.region else None,
+            'status': callback.status
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
