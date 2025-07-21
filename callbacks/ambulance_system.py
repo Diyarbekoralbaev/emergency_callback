@@ -1,11 +1,11 @@
 """
-Simplified ambulance system with two-step process:
-1. Ask for rating (1-5) → Save rating → Play thank you
-2. Wait for keyboard input → If 0 = transfer, else = hangup
+Fixed static ambulance system with improved cleanup and state management
 """
 import asyncio
 import logging
 import uuid
+import time
+import weakref
 from typing import Dict, Optional, List
 from dataclasses import dataclass
 from enum import Enum
@@ -26,6 +26,13 @@ class CallState(Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
+class ConnectionState(Enum):
+    DISCONNECTED = "disconnected"
+    CONNECTING = "connecting"
+    CONNECTED = "connected"
+    RECONNECTING = "reconnecting"
+    FAILED = "failed"
+
 @dataclass
 class CallInfo:
     call_id: str
@@ -42,6 +49,11 @@ class CallInfo:
     call_duration: Optional[int] = None
     answered_at: Optional[float] = None
     rating_attempts: int = 0
+    created_at: float = None
+
+    def __post_init__(self):
+        if self.created_at is None:
+            self.created_at = time.time()
 
 @dataclass
 class CallResult:
@@ -53,6 +65,598 @@ class CallResult:
     final_status: Optional[str] = None
     call_duration: Optional[int] = None
 
+class ConnectionManager:
+    """Manages AMI connection with health monitoring and auto-reconnection"""
+
+    def __init__(self, config):
+        self.config = config
+        self.manager = None
+        self.connection_state = ConnectionState.DISCONNECTED
+        self.last_ping_time = 0
+        self.reconnect_attempts = 0
+        self.max_reconnect_attempts = config.get('MAX_RECONNECT_ATTEMPTS', 5)
+        self.reconnect_delay = config.get('RECONNECT_DELAY', 5)
+        self.ping_interval = config.get('PING_INTERVAL', 30)
+        self.connection_lock = asyncio.Lock()
+        self.health_check_task = None
+        self.event_handlers = {}
+        self.last_successful_action = time.time()
+
+    async def connect(self) -> bool:
+        """Connect to Asterisk AMI with retry logic"""
+        async with self.connection_lock:
+            if self.connection_state == ConnectionState.CONNECTED:
+                # Verify connection is actually working
+                try:
+                    await self._ping()
+                    return True
+                except:
+                    logger.warning("Connection verification failed, reconnecting...")
+                    self.connection_state = ConnectionState.DISCONNECTED
+
+            self.connection_state = ConnectionState.CONNECTING
+
+            try:
+                logger.info(f"Connecting to AMI at {self.config['AMI_HOST']}:{self.config['AMI_PORT']}")
+
+                # Close any existing connection first
+                if self.manager:
+                    try:
+                        close_result = self.manager.close()
+                        if close_result is not None:
+                            await close_result
+                    except:
+                        pass
+                    self.manager = None
+
+                self.manager = panoramisk.Manager(
+                    loop=asyncio.get_event_loop(),
+                    host=self.config['AMI_HOST'],
+                    port=int(self.config['AMI_PORT']),
+                    username=self.config['AMI_USERNAME'],
+                    secret=self.config['AMI_SECRET']
+                )
+
+                await self.manager.connect()
+
+                # Test connection with ping
+                await self._ping()
+
+                self.connection_state = ConnectionState.CONNECTED
+                self.reconnect_attempts = 0
+                self.last_ping_time = time.time()
+                self.last_successful_action = time.time()
+
+                # Re-register event handlers
+                self._register_event_handlers()
+
+                # Start health monitoring
+                if not self.health_check_task or self.health_check_task.done():
+                    self.health_check_task = asyncio.create_task(self._health_monitor())
+
+                logger.info("Successfully connected to Asterisk AMI")
+                return True
+
+            except Exception as e:
+                logger.error(f"Failed to connect to AMI: {e}")
+                self.connection_state = ConnectionState.FAILED
+                self.manager = None
+                return False
+
+    async def disconnect(self):
+        """Disconnect from AMI"""
+        async with self.connection_lock:
+            if self.health_check_task and not self.health_check_task.done():
+                self.health_check_task.cancel()
+                try:
+                    await self.health_check_task
+                except asyncio.CancelledError:
+                    pass
+
+            if self.manager:
+                try:
+                    close_result = self.manager.close()
+                    if close_result is not None:
+                        await close_result
+                except Exception as e:
+                    logger.error(f"Error disconnecting: {e}")
+                finally:
+                    self.manager = None
+
+            self.connection_state = ConnectionState.DISCONNECTED
+            logger.info("Disconnected from AMI")
+
+    async def ensure_connected(self) -> bool:
+        """Ensure we have a healthy connection"""
+        if self.connection_state != ConnectionState.CONNECTED:
+            return await self.connect()
+
+        # Check if connection is still healthy
+        try:
+            await self._ping()
+            self.last_successful_action = time.time()
+            return True
+        except Exception as e:
+            logger.warning(f"Connection health check failed: {e}")
+            return await self._reconnect()
+
+    async def _ping(self):
+        """Send ping to test connection"""
+        if not self.manager:
+            raise Exception("No AMI connection")
+
+        result = await asyncio.wait_for(
+            self.manager.send_action({'Action': 'Ping'}),
+            timeout=5.0
+        )
+        self.last_ping_time = time.time()
+        return result
+
+    async def _reconnect(self) -> bool:
+        """Attempt to reconnect"""
+        if self.connection_state == ConnectionState.RECONNECTING:
+            return False
+
+        self.connection_state = ConnectionState.RECONNECTING
+
+        while self.reconnect_attempts < self.max_reconnect_attempts:
+            self.reconnect_attempts += 1
+            logger.info(f"Reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
+
+            try:
+                await self.disconnect()
+                await asyncio.sleep(self.reconnect_delay)
+
+                if await self.connect():
+                    logger.info("Successfully reconnected to AMI")
+                    return True
+
+            except Exception as e:
+                logger.error(f"Reconnection attempt {self.reconnect_attempts} failed: {e}")
+
+        logger.error("All reconnection attempts failed")
+        self.connection_state = ConnectionState.FAILED
+        return False
+
+    async def _health_monitor(self):
+        """Background task to monitor connection health"""
+        while True:
+            try:
+                await asyncio.sleep(self.ping_interval)
+
+                if self.connection_state == ConnectionState.CONNECTED:
+                    # Check if we haven't had successful action recently
+                    time_since_action = time.time() - self.last_successful_action
+                    if time_since_action > self.ping_interval * 2:
+                        logger.warning(f"No successful actions for {time_since_action}s, checking connection...")
+                        try:
+                            await self._ping()
+                            self.last_successful_action = time.time()
+                        except Exception as e:
+                            logger.warning(f"Health check ping failed: {e}")
+                            asyncio.create_task(self._reconnect())
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in health monitor: {e}")
+
+    def register_event_handler(self, event_name, handler):
+        """Register an event handler"""
+        self.event_handlers[event_name] = handler
+        if self.manager:
+            self.manager.register_event(event_name, handler)
+
+    def _register_event_handlers(self):
+        """Re-register all event handlers after reconnection"""
+        if self.manager:
+            for event_name, handler in self.event_handlers.items():
+                self.manager.register_event(event_name, handler)
+
+    async def send_action(self, action):
+        """Send action with connection retry"""
+        if not await self.ensure_connected():
+            raise Exception("Could not establish AMI connection")
+
+        try:
+            result = await asyncio.wait_for(
+                self.manager.send_action(action),
+                timeout=10.0
+            )
+            self.last_successful_action = time.time()
+            return result
+        except Exception as e:
+            logger.error(f"Action failed: {e}")
+            # Try to reconnect and retry once
+            if await self._reconnect():
+                result = await asyncio.wait_for(
+                    self.manager.send_action(action),
+                    timeout=10.0
+                )
+                self.last_successful_action = time.time()
+                return result
+            else:
+                raise
+
+class StaticAmbulanceSystem:
+    """Static ambulance system with persistent connection and improved cleanup"""
+
+    _instance = None
+    _initialized = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if self._initialized:
+            return
+
+        self.config = settings.AMBULANCE_CONFIG
+        self.connection_manager = ConnectionManager(self.config)
+        self.rating_manager = DjangoRatingManager()
+        self.audio_manager = None
+        self.channel_manager = None
+        self.call_manager = None
+        self.call_results = {}
+        self._initialized = True
+        self._setup_complete = False
+        self._cleanup_task = None
+
+    async def initialize(self) -> bool:
+        """Initialize the system with persistent connection"""
+        if self._setup_complete:
+            # Just ensure connection is healthy
+            healthy = await self.connection_manager.ensure_connected()
+            if healthy:
+                # Clean up any stale state
+                await self._cleanup_stale_state()
+            return healthy
+
+        # First time setup
+        if not await self.connection_manager.connect():
+            return False
+
+        # Initialize managers
+        max_channels = self.config.get('MAX_CHANNELS', 2)
+        self.channel_manager = ChannelManager(max_channels)
+        self.audio_manager = AudioManager(self.connection_manager)
+        self.call_manager = CallManager(
+            self.connection_manager,
+            self.audio_manager,
+            self.rating_manager,
+            self.channel_manager
+        )
+
+        # Register event handlers
+        self._register_event_handlers()
+
+        # Start cleanup task
+        if not self._cleanup_task or self._cleanup_task.done():
+            self._cleanup_task = asyncio.create_task(self._periodic_cleanup())
+
+        self._setup_complete = True
+        logger.info(f"Static ambulance system initialized with {max_channels} channels")
+        return True
+
+    async def _cleanup_stale_state(self):
+        """Clean up any stale state from previous calls"""
+        if not self.call_manager:
+            return
+
+        current_time = time.time()
+        stale_timeout = 300  # 5 minutes
+
+        # Clean up stale active calls
+        stale_calls = []
+        for uniqueid, call_info in self.call_manager.active_calls.items():
+            if current_time - call_info.created_at > stale_timeout:
+                stale_calls.append(uniqueid)
+
+        for uniqueid in stale_calls:
+            logger.warning(f"Cleaning up stale active call: {uniqueid}")
+            call_info = self.call_manager.active_calls.pop(uniqueid, None)
+            if call_info:
+                self.channel_manager.release_channel(call_info.call_id)
+
+        # Clean up stale pending calls
+        stale_pending = []
+        for call_id, call_info in self.call_manager.pending_calls.items():
+            if current_time - call_info.created_at > stale_timeout:
+                stale_pending.append(call_id)
+
+        for call_id in stale_pending:
+            logger.warning(f"Cleaning up stale pending call: {call_id}")
+            call_info = self.call_manager.pending_calls.pop(call_id, None)
+            if call_info:
+                self.channel_manager.release_channel(call_info.call_id)
+
+        # Clean up old call results
+        old_results = []
+        for call_id, result in self.call_results.items():
+            # Results older than 1 hour
+            if call_id in old_results or len(self.call_results) > 100:
+                old_results.append(call_id)
+
+        for call_id in old_results[:50]:  # Clean up max 50 at a time
+            self.call_results.pop(call_id, None)
+
+    async def _periodic_cleanup(self):
+        """Periodic cleanup task"""
+        while True:
+            try:
+                await asyncio.sleep(300)  # Every 5 minutes
+                await self._cleanup_stale_state()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in periodic cleanup: {e}")
+
+    def _register_event_handlers(self):
+        """Register AMI event handlers"""
+        self.connection_manager.register_event_handler('OriginateResponse', self._handle_originate_response)
+        self.connection_manager.register_event_handler('Newexten', self._handle_newexten)
+        self.connection_manager.register_event_handler('DTMFEnd', self._handle_dtmf)
+        self.connection_manager.register_event_handler('Hangup', self._handle_hangup)
+        self.connection_manager.register_event_handler('UserEvent', self._handle_user_event)
+
+    def _handle_originate_response(self, manager, message):
+        """Handle OriginateResponse events"""
+        asyncio.create_task(self._process_originate_response(message))
+
+    async def _process_originate_response(self, message):
+        """Process OriginateResponse events"""
+        if not self.call_manager:
+            return
+
+        actionid = message.get('ActionID', '')
+        response = message.get('Response', '')
+        reason = message.get('Reason', '')
+        uniqueid = message.get('Uniqueid', '')
+
+        if actionid in self.call_manager.pending_actions:
+            call_info = self.call_manager.pending_actions.pop(actionid)  # Remove immediately
+
+            if response == 'Failure':
+                call_info.status = 'FAILED'
+                call_info.error = f"Call failed: {reason}"
+                call_info.state = CallState.FAILED
+
+                # Clean up immediately
+                self.call_manager.pending_calls.pop(call_info.call_id, None)
+                self.channel_manager.release_channel(call_info.call_id)
+
+                self.call_results[call_info.call_id] = CallResult(
+                    success=False,
+                    call_id=call_info.call_id,
+                    error=call_info.error,
+                    final_status='failed'
+                )
+
+            elif response == 'Success':
+                call_info.status = 'CONNECTING'
+                call_info.state = CallState.CONNECTING
+                call_info.uniqueid = uniqueid
+                if uniqueid:
+                    self.call_manager.uniqueid_to_callid[uniqueid] = call_info.call_id
+
+    def _handle_newexten(self, manager, message):
+        """Handle Newexten events"""
+        asyncio.create_task(self._process_newexten(message))
+
+    async def _process_newexten(self, message):
+        """Process call answer events"""
+        if not self.call_manager:
+            return
+
+        context = message.get('Context', '')
+        application = message.get('Application', '')
+        app_data = message.get('AppData', '')
+        uniqueid = message.get('Uniqueid', '')
+        channel = message.get('Channel', '')
+
+        if (context == 'ambulance-callback' and
+                application == 'NoOp' and
+                'Ambulance callback - Call ID:' in app_data):
+
+            call_id = app_data.split('Call ID: ')[-1].strip()
+
+            if call_id in self.call_manager.pending_calls:
+                call_info = self.call_manager.pending_calls.pop(call_id)
+                call_info.status = 'ANSWERED'
+                call_info.uniqueid = uniqueid
+                call_info.channel = channel
+                call_info.state = CallState.ANSWERED
+                call_info.answered_at = time.time()
+
+                self.call_manager.active_calls[uniqueid] = call_info
+
+                logger.info(f"Call {call_id} answered")
+
+                # Start rating request after a delay
+                asyncio.create_task(self._start_rating_flow(call_info))
+
+    async def _start_rating_flow(self, call_info):
+        """Start the rating flow for a call"""
+        try:
+            await asyncio.sleep(2)
+            if call_info.uniqueid in self.call_manager.active_calls:
+                call_info.state = CallState.WAITING_RATING
+                await self.audio_manager.play_audio(call_info.channel, 'rating_request')
+        except Exception as e:
+            logger.error(f"Error starting rating flow for {call_info.call_id}: {e}")
+
+    def _handle_user_event(self, manager, message):
+        """Handle UserEvent for better call tracking"""
+        asyncio.create_task(self._process_user_event(message))
+
+    async def _process_user_event(self, message):
+        """Process user events from dialplan"""
+        event_name = message.get('UserEvent', '')
+        call_id = message.get('CallID', '')
+
+        if event_name == 'CallEnded' and call_id:
+            # Force cleanup for this call
+            logger.info(f"Received CallEnded event for {call_id}")
+            await self._force_cleanup_call(call_id)
+
+    async def _force_cleanup_call(self, call_id):
+        """Force cleanup of a specific call"""
+        if not self.call_manager:
+            return
+
+        # Find the call in active calls
+        uniqueid_to_remove = None
+        for uniqueid, call_info in self.call_manager.active_calls.items():
+            if call_info.call_id == call_id:
+                uniqueid_to_remove = uniqueid
+                break
+
+        if uniqueid_to_remove:
+            call_info = self.call_manager.active_calls.pop(uniqueid_to_remove)
+            self.channel_manager.release_channel(call_id)
+
+            # Set final result if not already set
+            if call_id not in self.call_results:
+                final_status = self.call_manager._determine_final_status(call_info)
+                self.call_results[call_id] = CallResult(
+                    success=True,
+                    call_id=call_id,
+                    rating=call_info.rating,
+                    transferred=call_info.transferred,
+                    final_status=final_status,
+                    call_duration=call_info.call_duration
+                )
+
+            logger.info(f"Force cleaned up call {call_id}")
+
+    def _handle_dtmf(self, manager, message):
+        """Handle DTMF events"""
+        asyncio.create_task(self._process_dtmf(message))
+
+    async def _process_dtmf(self, message):
+        """Process DTMF input"""
+        if not self.call_manager:
+            return
+
+        uniqueid = message.get('Uniqueid', '')
+        digit = message.get('Digit', '')
+        direction = message.get('Direction', 'Received')
+
+        if direction == 'Sent':
+            return
+
+        await self.call_manager.handle_dtmf_input(uniqueid, digit)
+
+    def _handle_hangup(self, manager, message):
+        """Handle hangup events"""
+        asyncio.create_task(self._process_hangup(message))
+
+    async def _process_hangup(self, message):
+        """Process hangup events with improved cleanup"""
+        if not self.call_manager:
+            return
+
+        uniqueid = message.get('Uniqueid', '')
+
+        if uniqueid in self.call_manager.active_calls:
+            call_info = self.call_manager.active_calls.pop(uniqueid)
+
+            # Calculate call duration
+            if call_info.answered_at:
+                call_info.call_duration = int(time.time() - call_info.answered_at)
+
+            # Determine final status
+            final_status = self.call_manager._determine_final_status(call_info)
+
+            # Release channel
+            self.channel_manager.release_channel(call_info.call_id)
+
+            # Store final result
+            self.call_results[call_info.call_id] = CallResult(
+                success=True,
+                call_id=call_info.call_id,
+                rating=call_info.rating,
+                transferred=call_info.transferred,
+                final_status=final_status,
+                call_duration=call_info.call_duration
+            )
+
+            logger.info(f"Call {call_info.call_id} completed with status: {final_status}")
+
+            # Cleanup
+            self.call_manager.uniqueid_to_callid.pop(uniqueid, None)
+            self.call_manager.rating_retries.pop(uniqueid, None)
+
+            # Remove from pending calls if still there
+            self.call_manager.pending_calls.pop(call_info.call_id, None)
+
+    async def make_callback_call(self, phone_number: str, brigade_id: str = None, callback_request_id: int = None) -> CallResult:
+        """Make a callback call using persistent connection"""
+        logger.info(f"Requesting callback call to {phone_number} (callback_request_id: {callback_request_id})")
+
+        # Ensure system is initialized and connected
+        if not await self.initialize():
+            error_msg = "Failed to initialize ambulance system"
+            logger.error(error_msg)
+            return CallResult(success=False, error=error_msg, final_status='failed')
+
+        # Make the call
+        result = await self.call_manager.make_callback_call(phone_number, brigade_id, callback_request_id)
+
+        if not result.success:
+            logger.error(f"Failed to initiate call: {result.error}")
+            return result
+
+        logger.info(f"Call {result.call_id} initiated, waiting for completion...")
+
+        # Wait for call to complete or timeout
+        timeout = self.config.get('CALL_TIMEOUT', 30) + 60  # Extra time for rating
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            await asyncio.sleep(1)
+            if result.call_id in self.call_results:
+                final_result = self.call_results.pop(result.call_id)  # Remove immediately
+                logger.info(f"Call {result.call_id} completed with status: {final_result.final_status}")
+                return final_result
+
+        # Timeout - force cleanup
+        logger.warning(f"Call {result.call_id} timed out after {timeout} seconds")
+        await self._force_cleanup_call(result.call_id)
+        return CallResult(success=False, call_id=result.call_id, error="Call timeout", final_status='failed')
+
+    async def get_system_status(self) -> dict:
+        """Get current system status"""
+        return {
+            'connection_state': self.connection_manager.connection_state.value,
+            'initialized': self._setup_complete,
+            'active_channels': self.channel_manager.get_active_count() if self.channel_manager else 0,
+            'max_channels': self.config.get('MAX_CHANNELS', 2),
+            'reconnect_attempts': self.connection_manager.reconnect_attempts,
+            'last_ping_time': self.connection_manager.last_ping_time,
+            'last_successful_action': self.connection_manager.last_successful_action,
+            'active_calls': len(self.call_manager.active_calls) if self.call_manager else 0,
+            'pending_calls': len(self.call_manager.pending_calls) if self.call_manager else 0,
+            'call_results_count': len(self.call_results)
+        }
+
+    async def shutdown(self):
+        """Gracefully shutdown the system"""
+        logger.info("Shutting down static ambulance system...")
+
+        if self._cleanup_task and not self._cleanup_task.done():
+            self._cleanup_task.cancel()
+            try:
+                await self._cleanup_task
+            except asyncio.CancelledError:
+                pass
+
+        await self.connection_manager.disconnect()
+        self._setup_complete = False
+
+# Keep existing classes with minor improvements...
 class ChannelManager:
     """Manages available channels for outbound calls"""
 
@@ -60,44 +664,50 @@ class ChannelManager:
         self.max_channels = max_channels
         self.semaphore = asyncio.Semaphore(max_channels)
         self.active_channels = set()
+        self.channel_lock = asyncio.Lock()
 
     async def acquire_channel(self, call_id: str) -> bool:
         """Acquire a channel for making a call (non-blocking)"""
-        try:
-            # Check if semaphore is available without blocking
-            if len(self.active_channels) >= self.max_channels:
-                logger.info(f"All channels busy for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
-                return False
-
-            # Try to acquire with zero timeout (non-blocking)
+        async with self.channel_lock:
             try:
-                await asyncio.wait_for(self.semaphore.acquire(), timeout=0.001)
-                self.active_channels.add(call_id)
-                logger.info(f"Channel acquired immediately for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
-                return True
-            except asyncio.TimeoutError:
-                logger.info(f"All channels busy for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
-                return False
+                if len(self.active_channels) >= self.max_channels:
+                    logger.info(f"All channels busy for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
+                    return False
 
-        except Exception as e:
-            logger.error(f"Error acquiring channel: {e}")
-            return False
+                try:
+                    await asyncio.wait_for(self.semaphore.acquire(), timeout=0.001)
+                    self.active_channels.add(call_id)
+                    logger.info(f"Channel acquired immediately for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
+                    return True
+                except asyncio.TimeoutError:
+                    logger.info(f"All channels busy for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
+                    return False
+
+            except Exception as e:
+                logger.error(f"Error acquiring channel: {e}")
+                return False
 
     async def wait_for_channel(self, call_id: str):
         """Wait for a channel to become available (blocking)"""
         logger.info(f"Call {call_id} waiting for available channel...")
         await self.semaphore.acquire()
-        self.active_channels.add(call_id)
+        async with self.channel_lock:
+            self.active_channels.add(call_id)
         logger.info(f"Channel acquired after waiting for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
 
     def release_channel(self, call_id: str):
         """Release a channel after call completion"""
-        if call_id in self.active_channels:
-            self.active_channels.remove(call_id)
-            self.semaphore.release()
-            logger.info(f"Channel released for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
-        else:
-            logger.warning(f"Attempted to release channel for call {call_id} but it was not in active channels")
+        async def _release():
+            async with self.channel_lock:
+                if call_id in self.active_channels:
+                    self.active_channels.remove(call_id)
+                    self.semaphore.release()
+                    logger.info(f"Channel released for call {call_id}. Active: {len(self.active_channels)}/{self.max_channels}")
+                else:
+                    logger.warning(f"Attempted to release channel for call {call_id} but it was not in active channels")
+
+        # Run release in background to avoid blocking
+        asyncio.create_task(_release())
 
     def get_active_count(self) -> int:
         """Get number of currently active channels"""
@@ -130,7 +740,7 @@ class DjangoRatingManager:
             )
 
             # Update callback status
-            callback.status = 'completed'  # Any call with rating is completed
+            callback.status = 'completed'
             if not callback.call_id:
                 callback.call_id = call_info.call_id
             callback.save()
@@ -145,8 +755,8 @@ class DjangoRatingManager:
 class AudioManager:
     """Handles audio playback"""
 
-    def __init__(self, manager):
-        self.manager = manager
+    def __init__(self, connection_manager):
+        self.connection_manager = connection_manager
 
     async def play_audio(self, channel: str, audio_key: str):
         """Play audio file using dialplan redirect"""
@@ -159,7 +769,7 @@ class AudioManager:
 
             logger.info(f"Playing {audio_file} on {channel}")
 
-            await self.manager.send_action({
+            await self.connection_manager.send_action({
                 'Action': 'Redirect',
                 'Channel': channel,
                 'Context': 'play-audio',
@@ -173,10 +783,10 @@ class AudioManager:
             return False
 
 class CallManager:
-    """Manages call state and operations"""
+    """Manages call state and operations with improved cleanup"""
 
-    def __init__(self, manager, audio_manager: AudioManager, rating_manager: DjangoRatingManager, channel_manager: ChannelManager):
-        self.manager = manager
+    def __init__(self, connection_manager, audio_manager: AudioManager, rating_manager: DjangoRatingManager, channel_manager: ChannelManager):
+        self.connection_manager = connection_manager
         self.audio_manager = audio_manager
         self.rating_manager = rating_manager
         self.channel_manager = channel_manager
@@ -215,9 +825,10 @@ class CallManager:
 
         try:
             config = settings.AMBULANCE_CONFIG
-            result = await self.manager.send_action({
+
+            result = await self.connection_manager.send_action({
                 'Action': 'Originate',
-                'Channel': f'PJSIP/{formatted_number}@skyline-trunk',
+                'Channel': f'Local/{formatted_number}@from-internal',
                 'Context': 'ambulance-callback',
                 'Exten': 's',
                 'Priority': '1',
@@ -281,9 +892,8 @@ class CallManager:
         if call_info.transferred:
             return 'transferred'
         elif call_info.rating is not None or call_info.state == CallState.COMPLETED:
-            return 'completed'  # Either got rating or completed the flow
+            return 'completed'
         elif call_info.state in [CallState.WAITING_RATING, CallState.WAITING_TRANSFER_DECISION, CallState.ANSWERED]:
-            # Call was answered but hung up without completing
             return 'no_rating'
         else:
             return 'failed'
@@ -377,14 +987,13 @@ class CallManager:
             return False
 
     async def _transfer_to_operator(self, channel: str):
-        """Transfer call to operator"""
+        """Transfer call to operator queue 777"""
         try:
-            config = settings.AMBULANCE_CONFIG
-            await self.manager.send_action({
+            await self.connection_manager.send_action({
                 'Action': 'Redirect',
                 'Channel': channel,
-                'Context': 'internal',
-                'Exten': config.get('OPERATOR_EXTENSION', '101'),
+                'Context': 'operator-queue',
+                'Exten': 's',
                 'Priority': '1'
             })
         except Exception as e:
@@ -394,317 +1003,48 @@ class CallManager:
     async def _hangup_call(self, channel: str):
         """Hangup call"""
         try:
-            await self.manager.send_action({
+            await self.connection_manager.send_action({
                 'Action': 'Hangup',
                 'Channel': channel
             })
         except Exception as e:
             logger.error(f"Failed to hangup: {e}")
 
-class CompleteAmbulanceSystem:
-    """Complete ambulance callback system with simplified flow"""
+# Singleton instance
+ambulance_system = StaticAmbulanceSystem()
 
-    def __init__(self):
-        self.manager = None
-        self.rating_manager = DjangoRatingManager()
-        self.audio_manager = None
-        self.channel_manager = None
-        self.call_manager = None
-        self.call_results = {}
-
-    async def __aenter__(self):
-        """Async context manager entry"""
-        await self.connect()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit"""
-        await self.disconnect()
-
-    async def connect(self) -> bool:
-        """Connect to Asterisk AMI"""
-        try:
-            config = settings.AMBULANCE_CONFIG
-
-            logger.info(f"Connecting to AMI at {config['AMI_HOST']}:{config['AMI_PORT']}")
-
-            self.manager = panoramisk.Manager(
-                loop=asyncio.get_event_loop(),
-                host=config['AMI_HOST'],
-                port=int(config['AMI_PORT']),  # Ensure port is integer
-                username=config['AMI_USERNAME'],
-                secret=config['AMI_SECRET']
-            )
-
-            # Test the connection
-            await self.manager.connect()
-
-            # Test AMI with a simple command
-            test_result = await self.manager.send_action({'Action': 'Ping'})
-            logger.info(f"AMI Ping successful: {test_result}")
-
-            # Initialize managers only after successful connection
-            max_channels = config.get('MAX_CHANNELS', 2)
-            self.channel_manager = ChannelManager(max_channels)
-            self.audio_manager = AudioManager(self.manager)
-            self.call_manager = CallManager(
-                self.manager,
-                self.audio_manager,
-                self.rating_manager,
-                self.channel_manager
-            )
-
-            # Register event handlers
-            self._register_event_handlers()
-
-            logger.info(f"Successfully connected to Asterisk AMI with {max_channels} channels")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to connect to AMI: {e}", exc_info=True)
-            # Ensure managers are None if connection failed
-            self.manager = None
-            self.channel_manager = None
-            self.audio_manager = None
-            self.call_manager = None
-            return False
-
-    def _register_event_handlers(self):
-        """Register AMI event handlers"""
-        self.manager.register_event('OriginateResponse', self._handle_originate_response)
-        self.manager.register_event('Newexten', self._handle_newexten)
-        self.manager.register_event('DTMFEnd', self._handle_dtmf)
-        self.manager.register_event('Hangup', self._handle_hangup)
-
-    def _handle_originate_response(self, manager, message):
-        """Handle OriginateResponse events"""
-        asyncio.create_task(self._process_originate_response(message))
-
-    async def _process_originate_response(self, message):
-        """Process OriginateResponse events"""
-        actionid = message.get('ActionID', '')
-        response = message.get('Response', '')
-        reason = message.get('Reason', '')
-        uniqueid = message.get('Uniqueid', '')
-
-        if actionid in self.call_manager.pending_actions:
-            call_info = self.call_manager.pending_actions[actionid]
-
-            if response == 'Failure':
-                call_info.status = 'FAILED'
-                call_info.error = f"Call failed: {reason}"
-                call_info.state = CallState.FAILED
-
-                # Release channel and store result
-                self.channel_manager.release_channel(call_info.call_id)
-                self.call_results[call_info.call_id] = CallResult(
-                    success=False,
-                    call_id=call_info.call_id,
-                    error=call_info.error,
-                    final_status='failed'
-                )
-
-            elif response == 'Success':
-                call_info.status = 'CONNECTING'
-                call_info.state = CallState.CONNECTING
-                call_info.uniqueid = uniqueid
-                if uniqueid:
-                    self.call_manager.uniqueid_to_callid[uniqueid] = call_info.call_id
-
-    def _handle_newexten(self, manager, message):
-        """Handle Newexten events"""
-        asyncio.create_task(self._process_newexten(message))
-
-    async def _process_newexten(self, message):
-        """Process call answer events"""
-        context = message.get('Context', '')
-        application = message.get('Application', '')
-        app_data = message.get('AppData', '')
-        uniqueid = message.get('Uniqueid', '')
-        channel = message.get('Channel', '')
-
-        if (context == 'ambulance-callback' and
-                application == 'NoOp' and
-                'Ambulance callback - Call ID:' in app_data):
-
-            call_id = app_data.split('Call ID: ')[-1].strip()
-
-            if call_id in self.call_manager.pending_calls:
-                call_info = self.call_manager.pending_calls.pop(call_id)
-                call_info.status = 'ANSWERED'
-                call_info.uniqueid = uniqueid
-                call_info.channel = channel
-                call_info.state = CallState.ANSWERED
-                call_info.answered_at = asyncio.get_event_loop().time()
-
-                self.call_manager.active_calls[uniqueid] = call_info
-
-                logger.info(f"Call {call_id} answered")
-
-                # Start rating request immediately
-                await asyncio.sleep(2)
-                call_info.state = CallState.WAITING_RATING
-                await self.audio_manager.play_audio(channel, 'rating_request')
-
-    def _handle_dtmf(self, manager, message):
-        """Handle DTMF events"""
-        asyncio.create_task(self._process_dtmf(message))
-
-    async def _process_dtmf(self, message):
-        """Process DTMF input"""
-        uniqueid = message.get('Uniqueid', '')
-        digit = message.get('Digit', '')
-        direction = message.get('Direction', 'Received')
-
-        if direction == 'Sent':
-            return
-
-        await self.call_manager.handle_dtmf_input(uniqueid, digit)
-
-    def _handle_hangup(self, manager, message):
-        """Handle hangup events"""
-        asyncio.create_task(self._process_hangup(message))
-
-    async def _process_hangup(self, message):
-        """Process hangup events"""
-        uniqueid = message.get('Uniqueid', '')
-
-        if uniqueid in self.call_manager.active_calls:
-            call_info = self.call_manager.active_calls.pop(uniqueid)
-
-            # Calculate call duration
-            if call_info.answered_at:
-                call_info.call_duration = int(asyncio.get_event_loop().time() - call_info.answered_at)
-
-            # Determine final status
-            final_status = self.call_manager._determine_final_status(call_info)
-
-            # Release channel
-            self.channel_manager.release_channel(call_info.call_id)
-
-            # Store final result
-            self.call_results[call_info.call_id] = CallResult(
-                success=True,
-                call_id=call_info.call_id,
-                rating=call_info.rating,
-                transferred=call_info.transferred,
-                final_status=final_status,
-                call_duration=call_info.call_duration
-            )
-
-            logger.info(f"Call {call_info.call_id} completed with status: {final_status}")
-
-            # Cleanup
-            self.call_manager.uniqueid_to_callid.pop(uniqueid, None)
-            self.call_manager.rating_retries.pop(uniqueid, None)
-
-    async def disconnect(self):
-        """Disconnect from AMI"""
-        if self.manager:
-            try:
-                close_result = self.manager.close()
-                if close_result is not None:
-                    await close_result
-            except Exception as e:
-                logger.error(f"Error disconnecting: {e}")
-
-    async def make_callback_call(self, phone_number: str, brigade_id: str = None, callback_request_id: int = None) -> CallResult:
-        """Make a callback call and wait for completion"""
-        logger.info(f"Requesting callback call to {phone_number} (callback_request_id: {callback_request_id})")
-
-        # Check if system is properly connected
-        if not self.call_manager:
-            error_msg = "Ambulance system not properly connected - call_manager is None"
-            logger.error(error_msg)
-            return CallResult(success=False, error=error_msg, final_status='failed')
-
-        if not self.manager:
-            error_msg = "AMI connection not established"
-            logger.error(error_msg)
-            return CallResult(success=False, error=error_msg, final_status='failed')
-
-        result = await self.call_manager.make_callback_call(phone_number, brigade_id, callback_request_id)
-
-        if not result.success:
-            logger.error(f"Failed to initiate call: {result.error}")
-            return result
-
-        logger.info(f"Call {result.call_id} initiated, waiting for completion...")
-
-        # Wait for call to complete or timeout
-        timeout = settings.AMBULANCE_CONFIG.get('CALL_TIMEOUT', 30) + 60  # Extra time for rating
-
-        for _ in range(timeout):
-            await asyncio.sleep(1)
-            if result.call_id in self.call_results:
-                final_result = self.call_results[result.call_id]
-                logger.info(f"Call {result.call_id} completed with status: {final_result.final_status}")
-                return final_result
-
-        # Timeout
-        logger.warning(f"Call {result.call_id} timed out after {timeout} seconds")
-        if self.channel_manager:
-            self.channel_manager.release_channel(result.call_id)
-        return CallResult(success=False, call_id=result.call_id, error="Call timeout", final_status='failed')
-
-# Django integration function
+# Django integration function - now much simpler
 async def complete_make_ambulance_call(callback_request) -> dict:
     """
-    Complete ambulance call with simplified flow
+    Complete ambulance call using static system with persistent connection
     """
     try:
-        system = CompleteAmbulanceSystem()
+        phone_number = callback_request.phone_number
+        brigade_id = callback_request.team.id if callback_request.team else None
+        callback_request_id = callback_request.id
 
-        # Try to connect
-        connected = await system.connect()
-        if not connected:
-            logger.error("Failed to connect to AMI system")
-            await system.disconnect()
+        result = await ambulance_system.make_callback_call(phone_number, brigade_id, callback_request_id)
+
+        if result.success:
+            # Update callback request
+            callback_request.call_id = result.call_id
+            await sync_to_async(callback_request.save)()
+
+            return {
+                'success': True,
+                'call_id': result.call_id,
+                'rating': result.rating,
+                'transferred': result.transferred,
+                'final_status': result.final_status,
+                'call_duration': result.call_duration
+            }
+        else:
             return {
                 'success': False,
-                'error': 'Failed to connect to AMI system',
-                'call_id': None,
-                'final_status': 'failed'
+                'error': result.error,
+                'call_id': result.call_id,
+                'final_status': result.final_status or 'failed'
             }
-
-        try:
-            phone_number = callback_request.phone_number
-            brigade_id = callback_request.team.id if callback_request.team else None
-            callback_request_id = callback_request.id
-
-            result = await system.make_callback_call(phone_number, brigade_id, callback_request_id)
-
-            if result.success:
-                # Update callback request
-                callback_request.call_id = result.call_id
-                await sync_to_async(callback_request.save)()
-
-                return {
-                    'success': True,
-                    'call_id': result.call_id,
-                    'rating': result.rating,
-                    'transferred': result.transferred,
-                    'final_status': result.final_status,
-                    'call_duration': result.call_duration
-                }
-            else:
-                return {
-                    'success': False,
-                    'error': result.error,
-                    'call_id': result.call_id,
-                    'final_status': result.final_status or 'failed'
-                }
-        except Exception as e:
-            logger.error(f"Error during ambulance call processing: {e}", exc_info=True)
-            return {
-                'success': False,
-                'error': str(e),
-                'call_id': None,
-                'final_status': 'failed'
-            }
-        finally:
-            # Always disconnect
-            await system.disconnect()
 
     except Exception as e:
         logger.error(f"Error in complete_make_ambulance_call: {e}", exc_info=True)

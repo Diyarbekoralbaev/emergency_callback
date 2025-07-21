@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+from celery.schedules import crontab
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -75,8 +77,19 @@ WSGI_APPLICATION = 'emergency_callback.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'emergency_callback',
+        'USER': 'postgres',
+        'PASSWORD': '02052005',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        "OPTIONS": {
+            "pool": {
+                "min_size": 10,
+                "max_size": 100,
+                "timeout": 10,
+            }
+        },
     }
 }
 
@@ -121,21 +134,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'redis://localhost:6379/2'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/2'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
 AMBULANCE_CONFIG = {
-    'AMI_HOST': '127.0.0.1',
+    'AMI_HOST': '172.16.95.250',  # Changed from '127.0.0.1'
     'AMI_PORT': 5038,
-    'AMI_USERNAME': 'astmanager',
-    'AMI_SECRET': '02052005',
+    'AMI_USERNAME': 'srtapi_amidefault',  # Changed from 'astmanager'
+    'AMI_SECRET': 'amidefault',  # Changed from '02052005'
     'CALLER_ID' : '"Ambulance Service" <781138081>',
     'MAX_CHANNELS': 2,
-    'OPERATOR_EXTENSION': '101',  # Operator extension for transfers
+    'OPERATOR_QUEUE': '777',  # Changed from 'OPERATOR_EXTENSION': '101'
     'CALL_TIMEOUT': 60,  # seconds
     'AUDIO_FILES': {
         'rating_request': 'ambulance-rating-request',
@@ -147,6 +160,15 @@ AMBULANCE_CONFIG = {
     'RATING_RETRY_LIMIT': 3,  # How many times to retry getting a rating
     'RATING_TIMEOUT': 10,     # How long to wait for rating input (seconds)
     'ADDITIONAL_TIMEOUT': 10, # How long to wait for additional questions input
+
+    'MAX_RECONNECT_ATTEMPTS': 5,  # Number of reconnection attempts
+    'RECONNECT_DELAY': 5,  # Seconds between reconnection attempts
+    'PING_INTERVAL': 30,  # Seconds between health check pings
+    'CONNECTION_TIMEOUT': 10,  # Timeout for initial connection
+
+    # Health monitoring
+    'HEALTH_CHECK_ENABLED': True,
+    'HEALTH_CHECK_INTERVAL': 60,  # Run health check every 60 seconds
 }
 
 LOGIN_URL = 'users:login'
@@ -154,8 +176,12 @@ LOGIN_REDIRECT_URL = 'callbacks:dashboard'
 LOGOUT_REDIRECT_URL = 'users:login'
 
 CELERY_BEAT_SCHEDULE = {
+    'ambulance-health-check': {
+        'task': 'your_app.tasks.check_ambulance_system_health',
+        'schedule': 60.0,  # Every minute
+    },
     'cleanup-stale-calls': {
-        'task': 'callbacks.tasks.cleanup_stale_calls',
-        'schedule': 60.0,  # Run every minute
+        'task': 'your_app.tasks.cleanup_stale_calls',
+        'schedule': crontab(minute='*/15'),  # Every 15 minutes
     },
 }
