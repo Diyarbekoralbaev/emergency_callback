@@ -32,6 +32,11 @@ class Command(BaseCommand):
             default=5,
             help='Refresh interval for watch mode (default: 5 seconds)'
         )
+        parser.add_argument(
+            '--no-init',
+            action='store_true',
+            help='Skip system initialization, show raw status only'
+        )
 
     def handle(self, *args, **options):
         if options['watch']:
@@ -42,6 +47,22 @@ class Command(BaseCommand):
     def show_status(self, options):
         """Show current system status"""
         try:
+            # Initialize/connect first (unless --no-init flag is used)
+            if not options['no_init']:
+                self.stdout.write("🔄 Initializing ambulance system...")
+                initialized = asyncio.run(ambulance_system.initialize())
+
+                if not initialized:
+                    self.stdout.write(
+                        self.style.WARNING("⚠️  System initialization failed, showing current state")
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.SUCCESS("✅ System initialized successfully")
+                    )
+            else:
+                self.stdout.write("ℹ️  Showing raw status (skipping initialization)")
+
             # Get status using asyncio
             status = asyncio.run(ambulance_system.get_system_status())
 
@@ -62,6 +83,19 @@ class Command(BaseCommand):
         """Watch status continuously"""
         try:
             import os
+            # Initialize once at the start (unless --no-init flag is used)
+            if not options['no_init']:
+                self.stdout.write("🔄 Initializing ambulance system...")
+                initialized = asyncio.run(ambulance_system.initialize())
+
+                if not initialized:
+                    self.stdout.write(
+                        self.style.WARNING("⚠️  Initial system initialization failed, will show current state")
+                    )
+
+                # Brief pause to show initialization message
+                asyncio.run(asyncio.sleep(2))
+
             while True:
                 # Clear screen
                 os.system('clear' if os.name == 'posix' else 'cls')
