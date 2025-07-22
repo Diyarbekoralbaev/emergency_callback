@@ -863,15 +863,10 @@ class CallManager:
         return None
 
     def _format_phone_number(self, phone_number: str) -> str:
-        """Format phone number for dialing"""
         clean_number = ''.join(filter(str.isdigit, phone_number))
-
-        if clean_number.startswith('998'):
-            return clean_number
-        elif clean_number.startswith('9') and len(clean_number) == 9:
-            return f'998{clean_number}'
-        elif len(clean_number) == 9:
-            return f'998{clean_number}'
+        # Remove any 998 prefix if it exists and return the raw number
+        if clean_number.startswith('998') and len(clean_number) == 12:
+            return clean_number[3:]  # Remove first 3 digits (998)
         return clean_number
 
     async def _handle_call_timeout(self, call_id: str):
