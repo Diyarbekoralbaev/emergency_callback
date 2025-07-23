@@ -3,6 +3,7 @@
 {% block title %}Обратные вызовы - Система экстренного обратного вызова{% endblock %}
 
 {% block extra_css %}
+<!-- Keep existing CSS -->
 <style>
     .status-dot {
         width: 8px;
@@ -57,7 +58,11 @@
     <div>
         <h1><i class="bi bi-telephone text-primary"></i> Обратные вызовы</h1>
         <p class="text-muted mb-0">
-            Управление запросами экстренного обратного вызова
+            {% if user.role == 'admin' %}
+                Управление запросами экстренного обратного вызова
+            {% else %}
+                Просмотр и создание запросов экстренного обратного вызова
+            {% endif %}
             {% if current_region or current_team or current_status or search or date_from or date_to %}
                 <span class="filter-badge">Фильтры активны</span>
             {% endif %}
@@ -67,14 +72,17 @@
         <a href="{% url 'callbacks:create' %}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Новый вызов
         </a>
+        {% if user.role == 'admin' %}
         <a href="{% url 'callbacks:dashboard' %}" class="btn btn-outline-info">
             <i class="bi bi-speedometer2"></i> Панель
         </a>
+        {% endif %}
         <button class="btn btn-outline-secondary" onclick="location.reload()">
             <i class="bi bi-arrow-clockwise"></i>
         </button>
     </div>
 </div>
+
 
 <!-- Quick Stats -->
 <div class="quick-stats mb-4">

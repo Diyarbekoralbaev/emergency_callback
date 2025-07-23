@@ -3,6 +3,7 @@
 {% block title %}Панель управления - Система экстренного обратного вызова{% endblock %}
 
 {% block extra_css %}
+<!-- Keep existing CSS -->
 <style>
     .stat-card {
         border: none;
@@ -83,10 +84,28 @@
         font-size: 0.8em;
         margin-right: 5px;
     }
+    .admin-only {
+        border-left: 3px solid #dc3545;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffeaea 100%);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Admin Only Notice -->
+<div class="admin-only">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-shield-check fs-4 text-danger me-3"></i>
+        <div>
+            <h6 class="mb-1 text-danger">Административная панель</h6>
+            <small class="text-muted">Эта страница доступна только администраторам системы</small>
+        </div>
+    </div>
+</div>
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
     <div>
         <h1 class="h2 mb-1">

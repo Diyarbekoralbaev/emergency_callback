@@ -224,6 +224,16 @@
             background: rgba(220,53,69,0.3);
             color: white;
         }
+
+        .role-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: inline-block;
+        }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -243,24 +253,34 @@
         </div>
 
         <div class="sidebar-menu">
+            <!-- Dashboard - Admin Only -->
+            {% if user.role == 'admin' %}
             <div class="sidebar-item">
                 <a href="{% url 'callbacks:dashboard' %}" class="sidebar-link">
                     <i class="bi bi-speedometer2"></i>
                     <span>Панель управления</span>
                 </a>
             </div>
+            {% endif %}
+
+            <!-- Create Call - Both Roles -->
             <div class="sidebar-item">
                 <a href="{% url 'callbacks:create' %}" class="sidebar-link">
                     <i class="bi bi-plus-circle"></i>
                     <span>Новый вызов</span>
                 </a>
             </div>
+
+            <!-- Call List - Both Roles -->
             <div class="sidebar-item">
                 <a href="{% url 'callbacks:list' %}" class="sidebar-link">
                     <i class="bi bi-list-ul"></i>
                     <span>Все вызовы</span>
                 </a>
             </div>
+
+            <!-- Admin Only Sections -->
+            {% if user.role == 'admin' %}
             <div class="sidebar-item">
                 <a href="{% url 'teams:region_list' %}" class="sidebar-link">
                     <i class="bi bi-geo-alt"></i>
@@ -279,6 +299,7 @@
                     <span>Оценки</span>
                 </a>
             </div>
+            {% endif %}
         </div>
 
         <div class="user-menu">
@@ -286,7 +307,14 @@
                 <i class="bi bi-person-circle fs-5"></i>
                 <div class="fw-semibold">{{ user.username }}</div>
                 <small>{{ user.email|default:"Пользователь" }}</small>
-                {% if user.is_staff %}
+                <div class="role-badge">
+                    {% if user.role == 'admin' %}
+                        <i class="bi bi-shield-check"></i> Администратор
+                    {% else %}
+                        <i class="bi bi-headset"></i> Оператор
+                    {% endif %}
+                </div>
+                {% if user.is_staff and user.role == 'admin' %}
                 <a href="/admin/" class="btn btn-sm btn-outline-light mt-2" target="_blank">
                     <i class="bi bi-gear"></i> Админ
                 </a>

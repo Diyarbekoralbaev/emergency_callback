@@ -1,4 +1,3 @@
-# callbacks/views.py
 import json
 import random
 
@@ -17,9 +16,11 @@ from .models import CallbackRequest, Rating, CallStatus
 from .forms import CallbackRequestForm
 from .tasks import fixed_process_callback_call as process_callback_call
 from teams.models import Team, Region
+from teams.permissions import admin_required, has_role
+from users.models import UserRoleChoices
 
 
-@login_required
+@admin_required
 def dashboard(request):
     # Get filter parameters
     region_filter = request.GET.get('region', '')
@@ -221,7 +222,7 @@ def dashboard(request):
     return render(request, 'callbacks/dashboard.html', context)
 
 
-@login_required
+@has_role([UserRoleChoices.ADMIN, UserRoleChoices.OPERATOR])
 def callback_list(request):
     status_filter = request.GET.get('status', '')
     team_filter = request.GET.get('team', '')
@@ -284,7 +285,7 @@ def callback_list(request):
     return render(request, 'callbacks/list.html', context)
 
 
-@login_required
+@has_role([UserRoleChoices.ADMIN, UserRoleChoices.OPERATOR])
 def callback_create(request):
     if request.method == 'POST':
         form = CallbackRequestForm(request.POST)
@@ -333,7 +334,7 @@ def callback_create(request):
     return render(request, 'callbacks/form.html', context)
 
 
-@login_required
+@has_role([UserRoleChoices.ADMIN, UserRoleChoices.OPERATOR])
 def callback_detail(request, pk):
     callback = get_object_or_404(CallbackRequest, pk=pk)
 
@@ -352,7 +353,7 @@ def callback_detail(request, pk):
     return render(request, 'callbacks/detail.html', context)
 
 
-@login_required
+@admin_required
 def ratings_list(request):
     team_filter = request.GET.get('team', '')
     region_filter = request.GET.get('region', '')
@@ -425,7 +426,7 @@ def ratings_list(request):
 
 
 # AJAX endpoint for getting teams by region
-@login_required
+@has_role([UserRoleChoices.ADMIN, UserRoleChoices.OPERATOR])
 def get_teams_by_region(request):
     region_id = request.GET.get('region_id')
     teams = []

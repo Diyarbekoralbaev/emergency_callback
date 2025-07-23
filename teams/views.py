@@ -1,4 +1,3 @@
-# teams/views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -8,11 +7,13 @@ from django.http import JsonResponse
 from datetime import datetime, timedelta
 from .models import Team, Region
 from .forms import TeamForm, RegionForm, TeamSearchForm, RegionSearchForm
+from .permissions import admin_required, has_role
+from users.models import UserRoleChoices
 
 
 # REGION VIEWS
 
-@login_required
+@admin_required
 def region_list(request):
     search = request.GET.get('search', '')
     show_inactive = request.GET.get('show_inactive', False)
@@ -63,7 +64,7 @@ def region_list(request):
     return render(request, 'teams/regions/list.html', context)
 
 
-@login_required
+@admin_required
 def region_detail(request, pk):
     region = get_object_or_404(Region, pk=pk)
 
@@ -107,7 +108,7 @@ def region_detail(request, pk):
     return render(request, 'teams/regions/detail.html', context)
 
 
-@login_required
+@admin_required
 def region_create(request):
     if request.method == 'POST':
         form = RegionForm(request.POST)
@@ -134,7 +135,7 @@ def region_create(request):
     return render(request, 'teams/regions/form.html', context)
 
 
-@login_required
+@admin_required
 def region_edit(request, pk):
     region = get_object_or_404(Region, pk=pk)
 
@@ -166,7 +167,7 @@ def region_edit(request, pk):
     return render(request, 'teams/regions/form.html', context)
 
 
-@login_required
+@admin_required
 def region_delete(request, pk):
     region = get_object_or_404(Region, pk=pk)
 
@@ -208,9 +209,9 @@ def region_delete(request, pk):
     return render(request, 'teams/regions/delete.html', context)
 
 
-# UPDATED TEAM VIEWS
+# TEAM VIEWS
 
-@login_required
+@admin_required
 def team_list(request):
     search = request.GET.get('search', '')
     region_id = request.GET.get('region', '')
@@ -271,7 +272,7 @@ def team_list(request):
     return render(request, 'teams/list.html', context)
 
 
-@login_required
+@admin_required
 def team_detail(request, pk):
     team = get_object_or_404(Team.objects.select_related('region', 'created_by'), pk=pk)
 
@@ -346,7 +347,7 @@ def team_detail(request, pk):
     return render(request, 'teams/detail.html', context)
 
 
-@login_required
+@admin_required
 def team_create(request):
     # Check if there are any active regions first
     if not Region.objects.filter(is_active=True).exists():
@@ -382,7 +383,7 @@ def team_create(request):
     return render(request, 'teams/form.html', context)
 
 
-@login_required
+@admin_required
 def team_edit(request, pk):
     team = get_object_or_404(Team.objects.select_related('region'), pk=pk)
 
@@ -418,7 +419,7 @@ def team_edit(request, pk):
     return render(request, 'teams/form.html', context)
 
 
-@login_required
+@admin_required
 def team_delete(request, pk):
     team = get_object_or_404(Team.objects.select_related('region'), pk=pk)
 
@@ -457,7 +458,7 @@ def team_delete(request, pk):
     return render(request, 'teams/delete.html', context)
 
 
-@login_required
+@admin_required
 def team_stats_api(request, pk):
     """API endpoint for team statistics (for AJAX calls)"""
     team = get_object_or_404(Team, pk=pk)
