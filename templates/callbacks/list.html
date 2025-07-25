@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
+{% load timezone_filters %}
 
 {% block title %}Обратные вызовы - Система экстренного обратного вызова{% endblock %}
 
 {% block extra_css %}
-<!-- Keep existing CSS -->
 <style>
     .status-dot {
         width: 8px;
@@ -50,6 +50,28 @@
         border-radius: 4px;
         margin-bottom: 2px;
     }
+    .time-input-group {
+        position: relative;
+    }
+    .time-input-group .form-control {
+        padding-right: 2.5rem;
+    }
+    .time-input-group .input-group-text {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 3;
+        border-left: 0;
+        background: transparent;
+    }
+    .rating-filter-highlight {
+        border-left: 3px solid #ffc107;
+        background: linear-gradient(135deg, #fffbf0 0%, #fff3cd 100%);
+        padding: 0.5rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+    }
 </style>
 {% endblock %}
 
@@ -63,9 +85,12 @@
             {% else %}
                 Просмотр и создание запросов экстренного обратного вызова
             {% endif %}
-            {% if current_region or current_team or current_status or search or date_from or date_to %}
+            {% if current_region or current_team or current_status or current_rating or search or date_from or date_to or time_from or time_to %}
                 <span class="filter-badge">Фильтры активны</span>
             {% endif %}
+            <small class="text-info d-block">
+                <i class="bi bi-clock"></i> Время отображается в часовом поясе Ташкента (UTC+5)
+            </small>
         </p>
     </div>
     <div class="btn-group">
@@ -83,11 +108,31 @@
     </div>
 </div>
 
+<!-- Rating Filter Highlight -->
+{% if current_rating %}
+<div class="rating-filter-highlight">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-star-fill text-warning fs-5 me-2"></i>
+        <div>
+            <strong>Фильтр по оценкам активен:</strong>
+            {% if current_rating == 'no_rating' %}
+                Показаны только вызовы без оценки
+            {% elif current_rating == 'high_rating' %}
+                Показаны только высокие оценки (4-5 звезд)
+            {% elif current_rating == 'low_rating' %}
+                Показаны только низкие оценки (1-2 звезды)
+            {% else %}
+                Показаны только вызовы с оценкой {{ current_rating }} звезда{{ current_rating|pluralize:",,ы,звезд" }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Quick Stats -->
 <div class="quick-stats mb-4">
     <div class="row g-3">
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-3 col-lg-2">
             <div class="card stat-card text-center">
                 <div class="card-body py-3">
                     <div class="h4 text-primary mb-1">{{ total_count }}</div>
@@ -95,7 +140,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-3 col-lg-2">
             <div class="card stat-card text-center">
                 <div class="card-body py-3">
                     <div class="h4 text-success mb-1">{{ showing_count }}</div>
@@ -103,7 +148,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-3 col-lg-2">
             <div class="card stat-card text-center">
                 <div class="card-body py-3">
                     <div class="h4 text-warning mb-1" id="activeCount">-</div>
@@ -111,11 +156,27 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-3 col-lg-2">
             <div class="card stat-card text-center">
                 <div class="card-body py-3">
                     <div class="h4 text-info mb-1" id="todayCount">-</div>
                     <div class="small text-muted">Сегодня</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <div class="card stat-card text-center">
+                <div class="card-body py-3">
+                    <div class="h4 text-danger mb-1" id="failedCount">-</div>
+                    <div class="small text-muted">Неудачных</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <div class="card stat-card text-center">
+                <div class="card-body py-3">
+                    <div class="h4 text-warning mb-1" id="ratedCount">-</div>
+                    <div class="small text-muted">С оценкой</div>
                 </div>
             </div>
         </div>
@@ -125,7 +186,8 @@
 <!-- Enhanced Filters -->
 <div class="filter-section">
     <form method="get" id="filterForm">
-        <div class="row g-3">
+        <!-- First Row: Main Filters -->
+        <div class="row g-3 mb-3">
             <div class="col-md-2">
                 <label for="region" class="form-label">Регион</label>
                 <select name="region" id="region" class="form-select form-select-sm">
@@ -160,6 +222,16 @@
                 </select>
             </div>
             <div class="col-md-2">
+                <label for="rating" class="form-label">Оценка</label>
+                <select name="rating" id="rating" class="form-select form-select-sm">
+                    {% for rating_code, rating_name in rating_options %}
+                        <option value="{{ rating_code }}" {% if current_rating == rating_code %}selected{% endif %}>
+                            {{ rating_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
                 <label for="date_from" class="form-label">Дата с</label>
                 <input type="date" name="date_from" id="date_from" class="form-control form-control-sm" value="{{ date_from }}">
             </div>
@@ -167,10 +239,37 @@
                 <label for="date_to" class="form-label">Дата по</label>
                 <input type="date" name="date_to" id="date_to" class="form-control form-control-sm" value="{{ date_to }}">
             </div>
+        </div>
+
+        <!-- Second Row: Time and Search Filters -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-2">
+                <label for="time_from" class="form-label">Время с</label>
+                <div class="time-input-group">
+                    <input type="time" name="time_from" id="time_from" class="form-control form-control-sm" value="{{ time_from }}">
+                    <span class="input-group-text">
+                        <i class="bi bi-clock"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label for="time_to" class="form-label">Время по</label>
+                <div class="time-input-group">
+                    <input type="time" name="time_to" id="time_to" class="form-control form-control-sm" value="{{ time_to }}">
+                    <span class="input-group-text">
+                        <i class="bi bi-clock"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="search" class="form-label">Поиск</label>
+                <input type="text" name="search" id="search" class="form-control form-control-sm"
+                       placeholder="Номер телефона, название бригады или региона..." value="{{ search }}">
+            </div>
             <div class="col-md-2 d-flex align-items-end">
                 <div class="btn-group w-100">
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-funnel"></i>
+                        <i class="bi bi-funnel"></i> Применить
                     </button>
                     <a href="{% url 'callbacks:list' %}" class="btn btn-outline-secondary btn-sm">
                         <i class="bi bi-x-circle"></i>
@@ -179,17 +278,22 @@
             </div>
         </div>
 
-        <!-- Search Row -->
-        <div class="row mt-3">
-            <div class="col-md-8">
-                <input type="text" name="search" class="form-control form-control-sm"
-                       placeholder="Поиск по номеру телефона, названию бригады или региона..." value="{{ search }}">
-            </div>
-            <div class="col-md-4">
-                <div class="btn-group btn-group-sm w-100" role="group">
+        <!-- Third Row: Quick Date and Time Filters -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="btn-group btn-group-sm" role="group">
                     <button type="button" class="btn btn-outline-primary" onclick="setDateRange('today')">Сегодня</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="setDateRange('yesterday')">Вчера</button>
                     <button type="button" class="btn btn-outline-primary" onclick="setDateRange('week')">7 дней</button>
                     <button type="button" class="btn btn-outline-primary" onclick="setDateRange('month')">30 дней</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-info" onclick="setTimeRange('morning')">Утро (6-12)</button>
+                    <button type="button" class="btn btn-outline-info" onclick="setTimeRange('day')">День (12-18)</button>
+                    <button type="button" class="btn btn-outline-info" onclick="setTimeRange('evening')">Вечер (18-24)</button>
+                    <button type="button" class="btn btn-outline-info" onclick="clearTimeRange()">Сбросить время</button>
                 </div>
             </div>
         </div>
@@ -203,7 +307,7 @@
             <h6 class="mb-0">
                 <i class="bi bi-list-ul text-primary"></i>
                 Список вызовов
-                {% if search or current_status or current_team or current_region or date_from or date_to %}
+                {% if search or current_status or current_team or current_region or current_rating or date_from or date_to or time_from or time_to %}
                     <span class="badge bg-info">Отфильтровано</span>
                 {% endif %}
             </h6>
@@ -282,10 +386,10 @@
                         </td>
                         <td>
                             <div class="small">
-                                <div>{{ callback.created_at|date:"d M, H:i" }}</div>
+                                <div>{{ callback.created_at|tashkent_datetime:"d M, H:i" }}</div>
                                 {% if callback.call_duration %}
                                     <div class="text-success">
-                                        <i class="bi bi-clock"></i> {{ callback.call_duration }}с
+                                        <i class="bi bi-clock"></i> {{ callback.call_duration|duration_format }}
                                     </div>
                                 {% elif callback.status == 'dialing' or callback.status == 'connecting' %}
                                     <div class="text-primary">
@@ -344,26 +448,38 @@
 
         <div class="card-footer bg-light text-muted small">
             <div class="row text-center">
-                <div class="col-3">
+                <div class="col-md-2">
                     <strong>{{ showing_count }}</strong> из <strong>{{ total_count }}</strong>
                     вызов{{ total_count|pluralize:",а,ов" }}
                 </div>
-                <div class="col-3">
+                <div class="col-md-2">
                     <span class="text-success">
                         <i class="bi bi-check-circle"></i>
                         <span id="completedCount">-</span> завершено
                     </span>
                 </div>
-                <div class="col-3">
+                <div class="col-md-2">
+                    <span class="text-danger">
+                        <i class="bi bi-x-circle"></i>
+                        <span id="failedTableCount">-</span> неудачно
+                    </span>
+                </div>
+                <div class="col-md-2">
                     <span class="text-warning">
                         <i class="bi bi-clock"></i>
                         <span id="pendingCount">-</span> в процессе
                     </span>
                 </div>
-                <div class="col-3">
-                    <span class="text-danger">
-                        <i class="bi bi-x-circle"></i>
-                        <span id="failedCount">-</span> не удалось
+                <div class="col-md-2">
+                    <span class="text-warning">
+                        <i class="bi bi-star"></i>
+                        <span id="ratedTableCount">-</span> с оценкой
+                    </span>
+                </div>
+                <div class="col-md-2">
+                    <span class="text-muted">
+                        <i class="bi bi-clock"></i>
+                        Время: UTC+5
                     </span>
                 </div>
             </div>
@@ -373,21 +489,21 @@
         <div class="text-center py-5">
             <i class="bi bi-telephone-x display-1 text-muted"></i>
             <h5 class="text-muted mt-3">
-                {% if search or current_status or current_team or current_region or date_from or date_to %}
+                {% if search or current_status or current_team or current_region or current_rating or date_from or date_to or time_from or time_to %}
                     Не найдено вызовов по вашим критериям
                 {% else %}
                     Запросов обратного вызова еще нет
                 {% endif %}
             </h5>
             <p class="text-muted">
-                {% if search or current_status or current_team or current_region or date_from or date_to %}
+                {% if search or current_status or current_team or current_region or current_rating or date_from or date_to or time_from or time_to %}
                     Попробуйте изменить фильтры или расширить критерии поиска
                 {% else %}
                     Создайте первый запрос обратного вызова для начала работы
                 {% endif %}
             </p>
             <div class="btn-group mt-3">
-                {% if search or current_status or current_team or current_region or date_from or date_to %}
+                {% if search or current_status or current_team or current_region or current_rating or date_from or date_to or time_from or time_to %}
                     <a href="{% url 'callbacks:list' %}" class="btn btn-outline-primary">
                         <i class="bi bi-arrow-left"></i> Сбросить фильтры
                     </a>
@@ -436,6 +552,13 @@ function setDateRange(range) {
             dateFrom.value = todayStr;
             dateTo.value = todayStr;
             break;
+        case 'yesterday':
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            dateFrom.value = yesterdayStr;
+            dateTo.value = yesterdayStr;
+            break;
         case 'week':
             const weekAgo = new Date(today);
             weekAgo.setDate(today.getDate() - 7);
@@ -453,6 +576,35 @@ function setDateRange(range) {
     document.getElementById('filterForm').submit();
 }
 
+// Quick time range functions
+function setTimeRange(range) {
+    const timeFrom = document.getElementById('time_from');
+    const timeTo = document.getElementById('time_to');
+
+    switch(range) {
+        case 'morning':
+            timeFrom.value = '06:00';
+            timeTo.value = '12:00';
+            break;
+        case 'day':
+            timeFrom.value = '12:00';
+            timeTo.value = '18:00';
+            break;
+        case 'evening':
+            timeFrom.value = '18:00';
+            timeTo.value = '23:59';
+            break;
+    }
+
+    document.getElementById('filterForm').submit();
+}
+
+function clearTimeRange() {
+    document.getElementById('time_from').value = '';
+    document.getElementById('time_to').value = '';
+    document.getElementById('filterForm').submit();
+}
+
 // Update counters
 document.addEventListener('DOMContentLoaded', () => {
     const rows = document.querySelectorAll('tbody tr');
@@ -461,12 +613,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let completedCount = 0;
     let pendingCount = 0;
     let failedCount = 0;
+    let ratedCount = 0;
 
-    const today = new Date().toLocaleDateString('ru');
+    const today = new Date();
+    const todayStr = today.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
 
     rows.forEach(row => {
         const statusElement = row.querySelector('.badge');
         const dateText = row.querySelector('td:nth-child(4)').textContent;
+        const ratingElement = row.querySelector('td:nth-child(6) .bi-star-fill');
 
         if (statusElement) {
             const statusText = statusElement.textContent.toLowerCase();
@@ -482,9 +637,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Count today's calls (rough check)
-        if (dateText.includes(today.slice(0, 5))) {
+        // Count today's calls
+        if (dateText.includes(todayStr)) {
             todayCount++;
+        }
+
+        // Count rated calls
+        if (ratingElement) {
+            ratedCount++;
         }
     });
 
@@ -494,6 +654,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('completedCount').textContent = completedCount;
     document.getElementById('pendingCount').textContent = pendingCount;
     document.getElementById('failedCount').textContent = failedCount;
+    document.getElementById('ratedCount').textContent = ratedCount;
+
+    // Update footer counts
+    document.getElementById('failedTableCount').textContent = failedCount;
+    document.getElementById('ratedTableCount').textContent = ratedCount;
 });
 
 // Auto refresh for active calls
@@ -504,8 +669,8 @@ setInterval(() => {
     }
 }, 30000);
 
-// Auto-submit filters on change (except date and search)
-document.querySelectorAll('#region, #team, #status').forEach(element => {
+// Auto-submit filters on change (except date, time and search)
+document.querySelectorAll('#region, #team, #status, #rating').forEach(element => {
     element.addEventListener('change', function() {
         document.getElementById('filterForm').submit();
     });

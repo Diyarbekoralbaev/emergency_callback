@@ -1,3 +1,4 @@
+{% load timezone_filters %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -234,11 +235,59 @@
             margin-top: 0.25rem;
             display: inline-block;
         }
+
+        /* Timezone indicator */
+        .timezone-info {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(13, 110, 253, 0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Error messages styling */
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c66;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .success-message {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #6c6;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .warning-message {
+            background: #ffd;
+            border: 1px solid #fc6;
+            color: #c90;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        /* Russian text improvements */
+        .text-ru {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+        }
     </style>
 
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="text-ru">
     <!-- Mobile Toggle -->
     <button class="mobile-toggle btn" onclick="toggleSidebar()">
         <i class="bi bi-list"></i>
@@ -250,6 +299,7 @@
         <div class="sidebar-header">
             <i class="bi bi-telephone-fill fs-4 mb-2"></i>
             <h5>Система экстренного обратного вызова</h5>
+            <small class="opacity-75">{% current_tashkent_time as current_time %}{{ current_time|tashkent_datetime:"H:i" }}</small>
         </div>
 
         <div class="sidebar-menu">
@@ -334,9 +384,9 @@
         <div class="mb-3">
             {% for message in messages %}
             <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
-                <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}-fill me-2"></i>
+                <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %}-fill me-2"></i>
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
             </div>
             {% endfor %}
         </div>
@@ -348,6 +398,15 @@
             {% block login_content %}{% endblock %}
         {% endif %}
     </div>
+
+    <!-- Timezone Info -->
+    {% if user.is_authenticated %}
+    <div class="timezone-info">
+        <i class="bi bi-clock"></i>
+        {% current_tashkent_time as current_time %}
+        {{ current_time|tashkent_datetime:"d.m.Y H:i" }} (UTC+5)
+    </div>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -362,12 +421,17 @@
                 toast.innerHTML = `
                     <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}-fill me-2"></i>
                     ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
                 `;
                 document.body.appendChild(toast);
                 setTimeout(() => {
                     toast.classList.remove('show');
-                    setTimeout(() => document.body.removeChild(toast), 150);
-                }, 4000);
+                    setTimeout(() => {
+                        if (document.body.contains(toast)) {
+                            document.body.removeChild(toast);
+                        }
+                    }, 150);
+                }, 5000);
             },
 
             // Copy to clipboard
@@ -389,6 +453,35 @@
                     btn.innerHTML = btn.dataset.originalText;
                     btn.disabled = false;
                 }
+            },
+
+            // Format duration
+            formatDuration(seconds) {
+                if (!seconds) return "—";
+
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+
+                if (hours > 0) {
+                    return `${hours}ч ${minutes}м ${secs}с`;
+                } else if (minutes > 0) {
+                    return `${minutes}м ${secs}с`;
+                } else {
+                    return `${secs}с`;
+                }
+            },
+
+            // Format phone number
+            formatPhone(phone) {
+                if (!phone) return '';
+
+                // Basic formatting for Uzbek numbers
+                if (phone.startsWith('+998')) {
+                    return phone.replace(/(\+998)(\d{2})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3-$4-$5');
+                }
+
+                return phone;
             }
         };
 
@@ -403,8 +496,8 @@
             const toggle = document.querySelector('.mobile-toggle');
 
             if (window.innerWidth <= 768 &&
-                !sidebar.contains(e.target) &&
-                !toggle.contains(e.target) &&
+                sidebar && !sidebar.contains(e.target) &&
+                toggle && !toggle.contains(e.target) &&
                 sidebar.classList.contains('show')) {
                 sidebar.classList.remove('show');
             }
@@ -421,13 +514,34 @@
                 }
             });
 
-            // Auto-dismiss alerts
+            // Auto-dismiss alerts after 7 seconds
             setTimeout(() => {
-                document.querySelectorAll('.alert').forEach(alert => {
-                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
-                    bsAlert.close();
+                document.querySelectorAll('.alert:not(.alert-dismissible)').forEach(alert => {
+                    try {
+                        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                        bsAlert.close();
+                    } catch (e) {
+                        // Alert might already be dismissed
+                    }
                 });
-            }, 5000);
+            }, 7000);
+
+            // Format phone numbers
+            document.querySelectorAll('.phone').forEach(phoneEl => {
+                phoneEl.textContent = App.formatPhone(phoneEl.textContent);
+            });
+        });
+
+        // Error handling
+        window.addEventListener('error', (e) => {
+            console.error('JavaScript Error:', e.error);
+            App.toast('Произошла ошибка на странице. Попробуйте обновить страницу.', 'error');
+        });
+
+        // Network error handling
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Network Error:', e.reason);
+            App.toast('Ошибка соединения с сервером. Проверьте интернет-подключение.', 'error');
         });
     </script>
 
