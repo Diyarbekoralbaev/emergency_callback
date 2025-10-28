@@ -311,6 +311,32 @@ class SimpleAMIConnection:
                 self.call_info.uniqueid = event.get('Uniqueid')
                 logger.info(f"Captured channel {channel} for call {self.call_info.call_id}")
 
+    async def _handle_originate_response(self, manager, event):
+        """Handle OriginateResponse event"""
+        if not self.call_info:
+            return
+
+        response = event.get('Response', '')
+        uniqueid = event.get('Uniqueid', '')
+
+        logger.info(f"OriginateResponse for {self.call_info.call_id}: {response}")
+
+    async def _handle_newexten(self, manager, event):
+        """Handle Newexten event to track call progress"""
+        if not self.call_info:
+            return
+
+        # This tracks extensions being executed
+        uniqueid = event.get('Uniqueid', '')
+        if uniqueid == self.call_info.uniqueid:
+            context = event.get('Context', '')
+            exten = event.get('Extension', '')
+            app = event.get('Application', '')
+
+            # Log context changes for debugging
+            if context in ['ambulance-callback', 'play-audio', 'transfer-to-337']:
+                logger.debug(f"Call {self.call_info.call_id} executing {app} in {context}:{exten}")
+
     async def _handle_dtmf(self, digit: str):
         """Handle DTMF input"""
         if self.call_info.state == CallState.WAITING_RATING:
