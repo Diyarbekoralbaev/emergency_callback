@@ -58,7 +58,7 @@ class CallResult:
     call_duration: Optional[int] = None
 
 
-class DjangoRatingManager:
+class RatingManager:
     """Rating manager that saves to Django models"""
 
     @sync_to_async
