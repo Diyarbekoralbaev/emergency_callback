@@ -982,15 +982,35 @@ class CallManager:
             return False
 
     async def _transfer_to_operator(self, channel: str):
-        """Transfer call to operator queue 777"""
+        """Transfer call to internal extension 337"""
         try:
+            # Try ext-local context first (where extension actually lives)
             await self.connection_manager.send_action({
                 'Action': 'Redirect',
                 'Channel': channel,
-                'Context': 'operator-queue',
-                'Exten': 's',
+                'Context': 'ext-local',
+                'Exten': '337',
                 'Priority': '1'
             })
+
+            # Alternative methods if above doesn't work:
+            # Method 2: Use from-internal which includes ext-local
+            # await self.connection_manager.send_action({
+            #     'Action': 'Redirect',
+            #     'Channel': channel,
+            #     'Context': 'from-internal',
+            #     'Exten': '337',
+            #     'Priority': '1'
+            # })
+
+            # Method 3: Use BlindTransfer
+            # await self.connection_manager.send_action({
+            #     'Action': 'BlindTransfer',
+            #     'Channel': channel,
+            #     'Exten': '337',
+            #     'Context': 'ext-local'
+            # })
+
         except Exception as e:
             logger.error(f"Transfer failed: {e}")
             await self._hangup_call(channel)
