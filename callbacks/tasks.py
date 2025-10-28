@@ -2,20 +2,20 @@ import logging
 from celery import shared_task
 from asgiref.sync import async_to_sync
 from django.utils import timezone
-from .models import CallbackRequest, Rating, CallStatus
-from callbacks.ambulance_system import complete_make_ambulance_call, ambulance_system
+from .models import CallbackRequest, CallStatus
 
 logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, max_retries=3)
-def fixed_process_callback_call(self, callback_request_id):
+def process_callback_call(self, callback_request_id):
     """
-    Improved callback processing using static ambulance system with persistent connection
+    Process callback call - simple version with fresh connection each time
     """
     logger.info(f"Processing callback call for ID: {callback_request_id}")
 
     try:
+        # Get callback request
         callback = CallbackRequest.objects.get(id=callback_request_id)
         logger.info(f"Found callback request: {callback}")
 
@@ -23,10 +23,13 @@ def fixed_process_callback_call(self, callback_request_id):
         callback.status = CallStatus.DIALING
         callback.call_started_at = timezone.now()
         callback.save()
-        logger.info(f"Updated callback status to DIALING")
+        logger.info("Updated callback status to DIALING")
 
-        # Execute the ambulance call using static system
-        logger.info("Initiating ambulance call using static system...")
+        # Import here to avoid circular imports
+        from callbacks.ambulance_system import complete_make_ambulance_call
+
+        # Make the call (fresh connection each time)
+        logger.info("Initiating ambulance call...")
         result = async_to_sync(complete_make_ambulance_call)(callback)
         logger.info(f"Ambulance call completed with result: {result}")
 
@@ -34,10 +37,9 @@ def fixed_process_callback_call(self, callback_request_id):
         callback.call_ended_at = timezone.now()
 
         if result['success']:
-            # Set status based on the detailed final_status from ambulance system
+            # Map final_status to Django status
             final_status = result.get('final_status', 'completed')
 
-            # Map ambulance system statuses to Django model statuses
             status_mapping = {
                 'transferred': CallStatus.TRANSFERRED,
                 'completed': CallStatus.COMPLETED,
@@ -49,7 +51,6 @@ def fixed_process_callback_call(self, callback_request_id):
             callback.call_id = result.get('call_id')
             callback.transferred = result.get('transferred', False)
 
-            # Set call duration if available
             if result.get('call_duration'):
                 callback.call_duration = result['call_duration']
 
@@ -88,7 +89,7 @@ def fixed_process_callback_call(self, callback_request_id):
     except Exception as exc:
         logger.error(f"Exception in callback processing: {exc}", exc_info=True)
 
-        # Try to update the callback status to failed if we can
+        # Try to update the callback status to failed
         try:
             callback = CallbackRequest.objects.get(id=callback_request_id)
             callback.status = CallStatus.FAILED
@@ -158,77 +159,3 @@ def cleanup_stale_calls():
 
     logger.info(f"Cleanup completed. Updated {updated_count} stale calls.")
     return updated_count
-
-
-@shared_task
-def check_ambulance_system_health():
-    """
-    Health check task for the static ambulance system
-    """
-    logger.info("Checking ambulance system health...")
-
-    try:
-        # Get system status
-        status = async_to_sync(ambulance_system.get_system_status)()
-
-        logger.info(f"Ambulance system status: {status}")
-
-        # Check if system needs initialization
-        if not status['initialized'] or status['connection_state'] != 'connected':
-            logger.warning("Ambulance system not properly initialized, attempting to initialize...")
-            success = async_to_sync(ambulance_system.initialize)()
-
-            if success:
-                logger.info("Ambulance system successfully initialized")
-            else:
-                logger.error("Failed to initialize ambulance system")
-
-        return status
-
-    except Exception as e:
-        logger.error(f"Error checking ambulance system health: {e}", exc_info=True)
-        return {
-            'error': str(e),
-            'connection_state': 'unknown',
-            'initialized': False
-        }
-
-
-@shared_task
-def initialize_ambulance_system():
-    """
-    Task to explicitly initialize the ambulance system (useful for startup)
-    """
-    logger.info("Initializing ambulance system...")
-
-    try:
-        success = async_to_sync(ambulance_system.initialize)()
-
-        if success:
-            status = async_to_sync(ambulance_system.get_system_status)()
-            logger.info(f"Ambulance system initialized successfully: {status}")
-            return {'success': True, 'status': status}
-        else:
-            logger.error("Failed to initialize ambulance system")
-            return {'success': False, 'error': 'Initialization failed'}
-
-    except Exception as e:
-        logger.error(f"Error initializing ambulance system: {e}", exc_info=True)
-        return {'success': False, 'error': str(e)}
-
-
-@shared_task
-def graceful_shutdown_ambulance_system():
-    """
-    Task to gracefully shutdown the ambulance system (useful for maintenance)
-    """
-    logger.info("Shutting down ambulance system...")
-
-    try:
-        async_to_sync(ambulance_system.shutdown)()
-        logger.info("Ambulance system shut down successfully")
-        return {'success': True}
-
-    except Exception as e:
-        logger.error(f"Error shutting down ambulance system: {e}", exc_info=True)
-        return {'success': False, 'error': str(e)}
