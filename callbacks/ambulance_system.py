@@ -76,8 +76,7 @@ class RatingManager:
 
             rating_obj = await sync_to_async(Rating.objects.create)(
                 callback_request=callback_request,
-                rating=call_info.rating,
-                call_id=call_info.call_id
+                rating=call_info.rating
             )
 
             logger.info(f"Rating {call_info.rating} saved for call {call_info.call_id}")
