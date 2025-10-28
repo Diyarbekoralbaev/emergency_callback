@@ -909,8 +909,8 @@ class CallManager:
                 return await self._handle_invalid_input(call_info)
 
         elif call_info.state == CallState.WAITING_TRANSFER_DECISION:
-            # Second step: Check if they want transfer (9) or hangup (any other)
-            if digit == '9':
+            # Second step: Check if they want transfer (0) or hangup (any other)
+            if digit == '0':
                 return await self._handle_transfer_request(call_info)
             else:
                 # Any other digit - just hangup
@@ -941,7 +941,7 @@ class CallManager:
         return True
 
     async def _handle_transfer_request(self, call_info: CallInfo) -> bool:
-        """Handle transfer request (digit 9 after rating)"""
+        """Handle transfer request (digit 0 after rating)"""
         call_info.transferred = True
         call_info.state = CallState.TRANSFERRING
 
@@ -950,7 +950,7 @@ class CallManager:
         return True
 
     async def _handle_complete_call(self, call_info: CallInfo) -> bool:
-        """Handle call completion (any digit other than 9 after rating - no transfer wanted)"""
+        """Handle call completion (any digit other than 0 after rating - no transfer wanted)"""
         call_info.state = CallState.COMPLETED
         logger.info(f"Call {call_info.call_id} completed - no transfer requested")
         await self._hangup_call(call_info.channel)
