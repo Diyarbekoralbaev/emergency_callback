@@ -982,35 +982,17 @@ class CallManager:
             return False
 
     async def _transfer_to_operator(self, channel: str):
-        """Transfer call to internal extension 337"""
+        """Transfer call to extension 337 using dedicated transfer context"""
         try:
-            # Try ext-local context first (where extension actually lives)
+            # Use new transfer-to-337 context for reliable transfer
             await self.connection_manager.send_action({
                 'Action': 'Redirect',
                 'Channel': channel,
-                'Context': 'ext-local',
-                'Exten': '337',
+                'Context': 'transfer-to-337',
+                'Exten': 's',
                 'Priority': '1'
             })
-
-            # Alternative methods if above doesn't work:
-            # Method 2: Use from-internal which includes ext-local
-            # await self.connection_manager.send_action({
-            #     'Action': 'Redirect',
-            #     'Channel': channel,
-            #     'Context': 'from-internal',
-            #     'Exten': '337',
-            #     'Priority': '1'
-            # })
-
-            # Method 3: Use BlindTransfer
-            # await self.connection_manager.send_action({
-            #     'Action': 'BlindTransfer',
-            #     'Channel': channel,
-            #     'Exten': '337',
-            #     'Context': 'ext-local'
-            # })
-
+            logger.info(f"Transfer initiated to extension 337 via transfer-to-337 context")
         except Exception as e:
             logger.error(f"Transfer failed: {e}")
             await self._hangup_call(channel)
