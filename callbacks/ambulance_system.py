@@ -58,32 +58,40 @@ class CallResult:
     call_duration: Optional[int] = None
 
 
-class RatingManager:
-    """Saves ratings to Django database"""
+class DjangoRatingManager:
+    """Rating manager that saves to Django models"""
 
-    @staticmethod
-    async def save_rating(call_info: CallInfo):
-        """Save rating to database"""
+    @sync_to_async
+    def save_rating(self, call_info: CallInfo) -> bool:
+        """Save rating to Django models using callback_request_id"""
         try:
-            from callbacks.models import Rating, CallbackRequest
+            from .models import CallbackRequest, Rating
 
-            if call_info.rating is None:
-                return
+            if call_info.callback_request_id:
+                callback = CallbackRequest.objects.get(id=call_info.callback_request_id)
+            else:
+                callback = CallbackRequest.objects.get(call_id=call_info.call_id)
 
-            callback_request = await sync_to_async(
-                CallbackRequest.objects.get
-            )(id=call_info.callback_request_id)
-
-            rating_obj = await sync_to_async(Rating.objects.create)(
-                callback_request=callback_request,
+            # Create rating
+            Rating.objects.create(
+                callback_request=callback,
                 rating=call_info.rating,
-                phone_number=callback_request.phone_number,
-                team=callback_request.team            )
+                phone_number=call_info.phone,
+                team=callback.team if hasattr(callback, 'team') else None
+            )
+
+            # Update callback status
+            callback.status = 'completed'
+            if not callback.call_id:
+                callback.call_id = call_info.call_id
+            callback.save()
 
             logger.info(f"Rating {call_info.rating} saved for call {call_info.call_id}")
+            return True
 
         except Exception as e:
             logger.error(f"Failed to save rating: {e}")
+            return False
 
 
 class SimpleAMIConnection:
