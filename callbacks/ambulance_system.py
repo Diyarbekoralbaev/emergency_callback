@@ -109,8 +109,15 @@ class ConnectionManager:
                         pass
                     self.manager = None
 
+                # Get or create a fresh event loop for Celery compatibility
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
                 self.manager = panoramisk.Manager(
-                    loop=asyncio.get_event_loop(),
+                    loop=loop,
                     host=self.config['AMI_HOST'],
                     port=int(self.config['AMI_PORT']),
                     username=self.config['AMI_USERNAME'],
@@ -168,6 +175,18 @@ class ConnectionManager:
 
     async def ensure_connected(self) -> bool:
         """Ensure we have a healthy connection"""
+        # Always check if manager's event loop is valid
+        if self.manager:
+            try:
+                if self.manager.loop.is_closed():
+                    logger.warning("Manager's event loop is closed, forcing reconnection")
+                    self.connection_state = ConnectionState.DISCONNECTED
+                    self.manager = None
+            except:
+                logger.warning("Invalid manager, forcing reconnection")
+                self.connection_state = ConnectionState.DISCONNECTED
+                self.manager = None
+
         if self.connection_state != ConnectionState.CONNECTED:
             return await self.connect()
 
@@ -177,13 +196,21 @@ class ConnectionManager:
             self.last_successful_action = time.time()
             return True
         except Exception as e:
-            logger.warning(f"Connection health check failed: {e}")
+            logger.warning(f"Connection health check failed: {e}, reconnecting...")
             return await self._reconnect()
 
     async def _ping(self):
         """Send ping to test connection"""
         if not self.manager:
             raise Exception("No AMI connection")
+
+        # Check if the event loop is still valid
+        try:
+            loop = self.manager.loop
+            if loop.is_closed():
+                raise Exception("Event loop is closed")
+        except:
+            raise Exception("Invalid manager or closed event loop")
 
         result = await asyncio.wait_for(
             self.manager.send_action({'Action': 'Ping'}),
@@ -257,6 +284,17 @@ class ConnectionManager:
         """Send action with connection retry"""
         if not await self.ensure_connected():
             raise Exception("Could not establish AMI connection")
+
+        # Double-check event loop is valid before sending
+        try:
+            if self.manager.loop.is_closed():
+                logger.warning("Loop closed before send_action, reconnecting...")
+                if not await self._reconnect():
+                    raise Exception("Reconnection failed")
+        except:
+            logger.warning("Invalid loop state, reconnecting...")
+            if not await self._reconnect():
+                raise Exception("Reconnection failed")
 
         try:
             result = await asyncio.wait_for(
@@ -909,8 +947,8 @@ class CallManager:
                 return await self._handle_invalid_input(call_info)
 
         elif call_info.state == CallState.WAITING_TRANSFER_DECISION:
-            # Second step: Check if they want transfer (0) or hangup (any other)
-            if digit == '0':
+            # Second step: Check if they want transfer (9) or hangup (any other)
+            if digit == '9':
                 return await self._handle_transfer_request(call_info)
             else:
                 # Any other digit - just hangup
@@ -941,7 +979,7 @@ class CallManager:
         return True
 
     async def _handle_transfer_request(self, call_info: CallInfo) -> bool:
-        """Handle transfer request (digit 0 after rating)"""
+        """Handle transfer request (digit 9 after rating)"""
         call_info.transferred = True
         call_info.state = CallState.TRANSFERRING
 
@@ -950,7 +988,7 @@ class CallManager:
         return True
 
     async def _handle_complete_call(self, call_info: CallInfo) -> bool:
-        """Handle call completion (any digit other than 0 after rating - no transfer wanted)"""
+        """Handle call completion (any digit other than 9 after rating - no transfer wanted)"""
         call_info.state = CallState.COMPLETED
         logger.info(f"Call {call_info.call_id} completed - no transfer requested")
         await self._hangup_call(call_info.channel)
