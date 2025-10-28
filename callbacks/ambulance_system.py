@@ -121,6 +121,8 @@ class SimpleAMIConnection:
             # Register event handlers
             self.manager.register_event('UserEvent', self._handle_user_event)
             self.manager.register_event('Hangup', self._handle_hangup)
+            self.manager.register_event('DTMF', self._handle_dtmf_event)
+            self.manager.register_event('Newchannel', self._handle_newchannel)
 
             return True
 
@@ -268,6 +270,39 @@ class SimpleAMIConnection:
         if uniqueid == self.call_info.uniqueid:
             logger.info(f"Call {self.call_info.call_id} hung up")
             self.call_complete_event.set()
+
+    async def _handle_dtmf_event(self, manager, event):
+        """Handle native Asterisk DTMF events"""
+        if not self.call_info:
+            return
+
+        # DTMF event has Channel and Digit
+        channel = event.get('Channel', '')
+        digit = event.get('Digit', '')
+        uniqueid = event.get('Uniqueid', '')
+
+        # Match by uniqueid or channel
+        if uniqueid == self.call_info.uniqueid or (self.call_info.channel and channel == self.call_info.channel):
+            logger.info(f"DTMF {digit} received for call {self.call_info.call_id}")
+            await self._handle_dtmf(digit)
+
+    async def _handle_newchannel(self, manager, event):
+        """Handle Newchannel event to capture channel name"""
+        if not self.call_info:
+            return
+
+        # Check if this is our call by looking at CallerIDNum or Exten
+        channel = event.get('Channel', '')
+        exten = event.get('Exten', '')
+        calleridnum = event.get('CallerIDNum', '')
+
+        # Match by extension (phone number we're calling)
+        clean_phone = self._format_phone_number(self.call_info.phone)
+        if exten == clean_phone or clean_phone in channel:
+            if not self.call_info.channel:
+                self.call_info.channel = channel
+                self.call_info.uniqueid = event.get('Uniqueid')
+                logger.info(f"Captured channel {channel} for call {self.call_info.call_id}")
 
     async def _handle_dtmf(self, digit: str):
         """Handle DTMF input"""
