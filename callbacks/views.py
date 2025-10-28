@@ -15,7 +15,7 @@ from django.views.decorators.http import require_http_methods
 
 from .models import CallbackRequest, Rating, CallStatus
 from .forms import CallbackRequestForm
-from .tasks import fixed_process_callback_call as process_callback_call
+from .tasks import process_callback_call
 from .utils import get_message, TASHKENT_TZ
 from teams.models import Team, Region
 from teams.permissions import admin_required, has_role
