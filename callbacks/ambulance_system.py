@@ -100,8 +100,12 @@ class SimpleAMIConnection:
     async def connect(self):
         """Connect to AMI"""
         try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # Get the current running event loop (from async_to_sync)
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # If no loop is running, create one
+                loop = asyncio.get_event_loop()
 
             self.manager = panoramisk.Manager(
                 loop=loop,
@@ -135,7 +139,7 @@ class SimpleAMIConnection:
         logger.info("Disconnected from AMI")
 
     async def originate_call(self, phone_number: str, brigade_id: Optional[int],
-                            callback_request_id: Optional[int]) -> CallResult:
+                             callback_request_id: Optional[int]) -> CallResult:
         """Originate a call and wait for completion"""
 
         call_id = str(uuid.uuid4())
