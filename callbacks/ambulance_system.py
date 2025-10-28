@@ -121,8 +121,10 @@ class SimpleAMIConnection:
             # Register event handlers
             self.manager.register_event('UserEvent', self._handle_user_event)
             self.manager.register_event('Hangup', self._handle_hangup)
-            self.manager.register_event('DTMF', self._handle_dtmf_event)
-            self.manager.register_event('Newchannel', self._handle_newchannel)
+            self.manager.register_event('DTMFEnd', self._handle_dtmf_event)  # DTMFEnd not DTMF!
+            self.manager.register_event('Newchannel', self._handle_newchannel)  # Capture channel name
+            self.manager.register_event('OriginateResponse', self._handle_originate_response)  # Track originate
+            self.manager.register_event('Newexten', self._handle_newexten)  # Track call progress
 
             return True
 
@@ -272,14 +274,19 @@ class SimpleAMIConnection:
             self.call_complete_event.set()
 
     async def _handle_dtmf_event(self, manager, event):
-        """Handle native Asterisk DTMF events"""
+        """Handle DTMFEnd events"""
         if not self.call_info:
             return
 
-        # DTMF event has Channel and Digit
+        # DTMFEnd event has Channel, Digit, and Direction
         channel = event.get('Channel', '')
         digit = event.get('Digit', '')
         uniqueid = event.get('Uniqueid', '')
+        direction = event.get('Direction', 'Received')
+
+        # Only process received DTMF (from user), not sent (from Asterisk)
+        if direction == 'Sent':
+            return
 
         # Match by uniqueid or channel
         if uniqueid == self.call_info.uniqueid or (self.call_info.channel and channel == self.call_info.channel):
