@@ -182,12 +182,13 @@ LOGIN_REDIRECT_URL = 'callbacks:dashboard'
 LOGOUT_REDIRECT_URL = 'users:login'
 
 CELERY_BEAT_SCHEDULE = {
-    'ambulance-health-check': {
-        'task': 'your_app.tasks.check_ambulance_system_health',
-        'schedule': 60.0,  # Every minute
-    },
     'cleanup-stale-calls': {
-        'task': 'your_app.tasks.cleanup_stale_calls',
+        'task': 'callbacks.tasks.cleanup_stale_calls',
         'schedule': crontab(minute='*/15'),  # Every 15 minutes
     },
 }
+
+ESKIZ_EMAIL = 'timurestelik@mail.ru'
+ESKIZ_PASSWORD = 'DNffBQD8mkOixKjhlul9dwvZ2QQc09pKTQsUqiBC'
+
+SITE_DOMAIN = 'http://103tezjardem.uz'
