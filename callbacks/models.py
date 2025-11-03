@@ -135,6 +135,31 @@ class CallbackRequest(models.Model):
         help_text="Пользователь, который создал запрос на обратный вызов"
     )
 
+    # SMS voting
+    vote_uuid = models.UUIDField(
+        unique=True,
+        default=uuid.uuid4,
+        editable=False,
+        verbose_name="UUID для голосования",
+        help_text="Уникальный идентификатор для SMS голосования"
+    )
+    sms_sent = models.BooleanField(
+        default=False,
+        verbose_name="SMS отправлено",
+        help_text="Было ли отправлено SMS с просьбой оценить"
+    )
+    sms_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Время отправки SMS",
+        help_text="Когда было отправлено SMS"
+    )
+    voted_via_sms = models.BooleanField(
+        default=False,
+        verbose_name="Проголосовал через SMS",
+        help_text="Пользователь проголосовал через SMS ссылку"
+    )
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = "Запрос обратного вызова"
@@ -144,6 +169,7 @@ class CallbackRequest(models.Model):
             models.Index(fields=['created_at']),
             models.Index(fields=['phone_number']),
             models.Index(fields=['team']),
+            models.Index(fields=['vote_uuid']),
         ]
 
     def __str__(self):
@@ -259,6 +285,13 @@ class CallbackRequest(models.Model):
             return f"{minutes}м {seconds}с"
         else:
             return f"{seconds}с"
+
+    @property
+    def vote_url(self):
+        """Get voting URL for SMS"""
+        from django.conf import settings
+        domain = getattr(settings, 'SITE_DOMAIN', 'http://103tezjardem.uz')
+        return f"{domain}/vote/{self.vote_uuid}"
 
 
 class Rating(models.Model):

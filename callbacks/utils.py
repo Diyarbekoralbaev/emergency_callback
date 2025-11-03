@@ -2,6 +2,11 @@
 from django.utils import timezone
 import pytz
 from django.contrib import messages
+from eskiz_sms import EskizSMS
+from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Tashkent timezone
 TASHKENT_TZ = pytz.timezone('Asia/Tashkent')
@@ -38,3 +43,19 @@ def get_message(key, **kwargs):
     """Get Russian message with formatting"""
     message = RUSSIAN_MESSAGES.get(key, key)
     return message.format(**kwargs) if kwargs else message
+
+def send_sms(phone_number, message):
+    """Send SMS using EskizSMS service"""
+    try:
+        eskiz = EskizSMS(
+            email=settings.ESKIZ_EMAIL,
+            password=settings.ESKIZ_PASSWORD,
+        )
+        eskiz.send_sms(
+            mobile_phone=phone_number,
+            message=message,
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send SMS to {phone_number}: {e}")
+        return False

@@ -66,6 +66,11 @@ def process_callback_call(self, callback_request_id):
         callback.save()
         logger.info("Callback request updated and saved successfully")
 
+        # Check if we need to send SMS (no rating received via call)
+        if not callback.has_rating and not callback.sms_sent:
+            logger.info(f"No rating received via call, sending SMS for callback {callback.id}")
+            send_rating_sms.delay(callback.id)
+
         return {
             'success': result['success'],
             'call_id': result.get('call_id'),
@@ -96,6 +101,11 @@ def process_callback_call(self, callback_request_id):
             callback.error_message = f"Processing error: {str(exc)}"
             callback.call_ended_at = timezone.now()
             callback.save()
+
+            # Send SMS since call failed
+            if not callback.sms_sent:
+                send_rating_sms.delay(callback.id)
+
         except:
             logger.error("Failed to update callback status after exception")
 
@@ -109,6 +119,82 @@ def process_callback_call(self, callback_request_id):
             'error': str(exc),
             'call_id': None,
             'status': 'failed'
+        }
+
+
+@shared_task(bind=True, max_retries=2)
+def send_rating_sms(self, callback_request_id):
+    """
+    Send SMS with rating link if call didn't get rating
+    """
+    logger.info(f"Sending rating SMS for callback ID: {callback_request_id}")
+
+    try:
+        callback = CallbackRequest.objects.get(id=callback_request_id)
+
+        # Check if already sent
+        if callback.sms_sent:
+            logger.info(f"SMS already sent for callback {callback.id}")
+            return {'success': True, 'message': 'SMS already sent'}
+
+        # Check if already has rating
+        if callback.has_rating:
+            logger.info(f"Callback {callback.id} already has rating, no SMS needed")
+            return {'success': True, 'message': 'Already has rating'}
+
+        # Import SMS utility
+        from .utils import send_sms
+
+        # Prepare SMS message
+        vote_url = callback.vote_url
+        message = (
+            f"Assalawma aleykum. Sizge ko'rsetilgen tez medecinaliq xizmetin bahalaw ushin "
+            f"to'mende ko'rsetilgen siltemege o'tip bahalawinizdi soranamiz. {vote_url}"
+        )
+
+        # Send SMS
+        success = send_sms(callback.phone_number, message)
+
+        if success:
+            # Update callback
+            callback.sms_sent = True
+            callback.sms_sent_at = timezone.now()
+            callback.status = CallStatus.WAITING_RATING
+            callback.save()
+
+            logger.info(f"SMS sent successfully to {callback.phone_number}")
+            return {
+                'success': True,
+                'message': 'SMS sent successfully',
+                'phone_number': callback.phone_number,
+                'vote_url': vote_url
+            }
+        else:
+            logger.error(f"Failed to send SMS to {callback.phone_number}")
+            return {
+                'success': False,
+                'error': 'Failed to send SMS'
+            }
+
+    except CallbackRequest.DoesNotExist:
+        error_msg = f"CallbackRequest {callback_request_id} not found"
+        logger.error(error_msg)
+        return {
+            'success': False,
+            'error': error_msg
+        }
+
+    except Exception as exc:
+        logger.error(f"Exception in SMS sending: {exc}", exc_info=True)
+
+        # Retry logic
+        if self.request.retries < self.max_retries:
+            logger.info(f"Retrying SMS send, attempt {self.request.retries + 1}")
+            raise self.retry(countdown=30, exc=exc)
+
+        return {
+            'success': False,
+            'error': str(exc)
         }
 
 
@@ -154,6 +240,10 @@ def cleanup_stale_calls():
         call.call_ended_at = timezone.now()
         call.save()
         updated_count += 1
+
+        # Send SMS if no rating and SMS not sent
+        if not call.has_rating and not call.sms_sent:
+            send_rating_sms.delay(call.id)
 
         logger.info(f"Cleaned up stale call {call.id}: {call.phone_number} -> {call.status}")
 

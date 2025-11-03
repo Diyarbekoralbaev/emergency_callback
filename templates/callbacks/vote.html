@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tez járdemni bahalaw</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .team-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .team-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+
+        .stars {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .star {
+            font-size: 50px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .star.empty {
+            color: #ddd;
+        }
+
+        .star.filled {
+            color: #ffc107;
+            transform: scale(1.2);
+        }
+
+        .star:active {
+            transform: scale(0.9);
+        }
+
+        .comment-section {
+            margin-bottom: 25px;
+        }
+
+        .comment-label {
+            display: block;
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .char-count {
+            text-align: right;
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 25px 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .star {
+                font-size: 40px;
+            }
+
+            .stars {
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚑</div>
+            <h1>Tez járdemni bahalaw</h1>
+        </div>
+
+        <div class="team-info">
+            <div class="team-name">{{ callback.team.name }}</div>
+        </div>
+
+        <div class="instruction">
+            Xızmet sápasın bahalaw ushın júldızshańı basıń
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <form id="voteForm">
+            <input type="hidden" name="rating" id="ratingInput" value="">
+
+            <div class="stars" id="stars">
+                <span class="star empty" data-rating="1">⭐</span>
+                <span class="star empty" data-rating="2">⭐</span>
+                <span class="star empty" data-rating="3">⭐</span>
+                <span class="star empty" data-rating="4">⭐</span>
+                <span class="star empty" data-rating="5">⭐</span>
+            </div>
+
+            <div class="comment-section">
+                <label class="comment-label">Pikirińizdi bildiriń (qaláwshańız boyınsha)</label>
+                <textarea
+                    name="comment"
+                    id="comment"
+                    placeholder="Pikirińizdi jazıń..."
+                    maxlength="500"></textarea>
+                <div class="char-count">
+                    <span id="charCount">0</span>/500
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                Jiberiw
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script>
+        const stars = document.querySelectorAll('.star');
+        const ratingInput = document.getElementById('ratingInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const voteForm = document.getElementById('voteForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const loading = document.getElementById('loading');
+        const commentTextarea = document.getElementById('comment');
+        const charCount = document.getElementById('charCount');
+
+        let selectedRating = 0;
+
+        // Star rating
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                selectedRating = parseInt(this.dataset.rating);
+                ratingInput.value = selectedRating;
+                updateStars();
+                submitBtn.disabled = false;
+            });
+        });
+
+        function updateStars() {
+            stars.forEach((star, index) => {
+                if (index < selectedRating) {
+                    star.classList.remove('empty');
+                    star.classList.add('filled');
+                } else {
+                    star.classList.remove('filled');
+                    star.classList.add('empty');
+                }
+            });
+        }
+
+        // Character count
+        commentTextarea.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+
+        // Form submission
+        voteForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (selectedRating === 0) {
+                showError('Bahańızdi tanlań');
+                return;
+            }
+
+            // Disable form
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            voteForm.style.display = 'none';
+
+            // Prepare data
+            const formData = new FormData();
+            formData.append('rating', selectedRating);
+            formData.append('comment', commentTextarea.value.trim());
+
+            try {
+                const response = await fetch('/vote/{{ vote_uuid }}/submit/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Redirect to thank you page
+                    window.location.href = '/vote/{{ vote_uuid }}/thanks/';
+                } else {
+                    showError(data.error || 'Qátelik júz berdi');
+                    loading.style.display = 'none';
+                    voteForm.style.display = 'block';
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                showError('Qátelik júz berdi. Qaytadan urınıp kórińiz.');
+                loading.style.display = 'none';
+                voteForm.style.display = 'block';
+                submitBtn.disabled = false;
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
