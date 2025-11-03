@@ -554,6 +554,11 @@ async def complete_make_ambulance_call(callback_request) -> dict:
             callback_request.call_id = result.call_id
             await sync_to_async(callback_request.save)()
 
+            # Send SMS if no rating received
+            if not result.rating:
+                from .tasks import send_rating_sms
+                send_rating_sms.delay(callback_request_id)
+
             return {
                 'success': True,
                 'call_id': result.call_id,
@@ -563,6 +568,10 @@ async def complete_make_ambulance_call(callback_request) -> dict:
                 'call_duration': result.call_duration
             }
         else:
+            # Send SMS on failed call
+            from .tasks import send_rating_sms
+            send_rating_sms.delay(callback_request_id)
+
             return {
                 'success': False,
                 'error': result.error,
@@ -572,6 +581,14 @@ async def complete_make_ambulance_call(callback_request) -> dict:
 
     except Exception as e:
         logger.error(f"Error in complete_make_ambulance_call: {e}", exc_info=True)
+
+        # Send SMS on exception
+        try:
+            from .tasks import send_rating_sms
+            send_rating_sms.delay(callback_request.id)
+        except:
+            pass
+
         return {
             'success': False,
             'error': str(e),

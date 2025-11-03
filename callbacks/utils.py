@@ -44,6 +44,7 @@ def get_message(key, **kwargs):
     message = RUSSIAN_MESSAGES.get(key, key)
     return message.format(**kwargs) if kwargs else message
 
+
 def send_sms(phone_number, message):
     """Send SMS using EskizSMS service"""
     try:
@@ -55,6 +56,7 @@ def send_sms(phone_number, message):
             mobile_phone=phone_number,
             message=message,
         )
+        logger.info(f"SMS sent successfully to {phone_number}")
         return True
     except Exception as e:
         logger.error(f"Failed to send SMS to {phone_number}: {e}")

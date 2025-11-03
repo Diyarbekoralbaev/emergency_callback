@@ -66,11 +66,6 @@ def process_callback_call(self, callback_request_id):
         callback.save()
         logger.info("Callback request updated and saved successfully")
 
-        # Check if we need to send SMS (no rating received via call)
-        if not callback.has_rating and not callback.sms_sent:
-            logger.info(f"No rating received via call, sending SMS for callback {callback.id}")
-            send_rating_sms.delay(callback.id)
-
         return {
             'success': result['success'],
             'call_id': result.get('call_id'),
@@ -101,11 +96,6 @@ def process_callback_call(self, callback_request_id):
             callback.error_message = f"Processing error: {str(exc)}"
             callback.call_ended_at = timezone.now()
             callback.save()
-
-            # Send SMS since call failed
-            if not callback.sms_sent:
-                send_rating_sms.delay(callback.id)
-
         except:
             logger.error("Failed to update callback status after exception")
 
@@ -171,6 +161,11 @@ def send_rating_sms(self, callback_request_id):
             }
         else:
             logger.error(f"Failed to send SMS to {callback.phone_number}")
+            # Retry
+            if self.request.retries < self.max_retries:
+                logger.info(f"Retrying SMS send, attempt {self.request.retries + 1}")
+                raise self.retry(countdown=30)
+
             return {
                 'success': False,
                 'error': 'Failed to send SMS'
