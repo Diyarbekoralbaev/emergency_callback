@@ -183,10 +183,7 @@ class SimpleAMIConnection:
                 ]
             }
 
-            result = await asyncio.wait_for(
-                self.manager.send_action(action),
-                timeout=15.0
-            )
+            result = await self.manager.send_action(action)
 
             logger.info(f"Call {call_id} originated to {clean_phone}")
 
