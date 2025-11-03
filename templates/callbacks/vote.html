@@ -3,190 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tez járdemni bahalaw</title>
+    <title>Tez járdem xızmetін bahalaw</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 16px;
+            line-height: 1.6;
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            padding: 30px 20px;
-            max-width: 500px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 32px 24px;
+            max-width: 480px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
         .logo {
-            font-size: 60px;
-            margin-bottom: 10px;
+            font-size: 56px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
+        }
+
+        .logo-text {
+            text-align: left;
+        }
+
+        .logo-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e3c72;
+            line-height: 1.2;
+        }
+
+        .logo-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
         }
 
         h1 {
             font-size: 24px;
-            color: #333;
-            margin-bottom: 10px;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
 
-        .team-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
+        .subtitle {
+            color: #64748b;
+            font-size: 15px;
+            font-weight: 500;
         }
 
-        .team-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #667eea;
+        .rating-section {
+            margin-bottom: 32px;
         }
 
-        .instruction {
-            text-align: center;
-            color: #666;
-            margin-bottom: 25px;
+        .section-label {
             font-size: 16px;
+            color: #334155;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-align: center;
         }
 
-        .stars {
+        .stars-container {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 24px 0;
         }
 
         .star {
-            font-size: 50px;
+            font-size: 64px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
+            position: relative;
         }
 
         .star.empty {
-            color: #ddd;
+            color: #cbd5e1;
+            opacity: 0.4;
+            filter: grayscale(100%);
         }
 
         .star.filled {
-            color: #ffc107;
-            transform: scale(1.2);
+            color: #fbbf24;
+            opacity: 1;
+            filter: grayscale(0%) drop-shadow(0 0 12px rgba(251, 191, 36, 0.6));
+            transform: scale(1.2) rotate(-5deg);
         }
 
         .star:active {
-            transform: scale(0.9);
+            transform: scale(1.1);
+        }
+
+        .rating-description {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e3c72;
+            min-height: 28px;
+            margin-bottom: 12px;
+        }
+
+        .rating-hint {
+            text-align: center;
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 500;
         }
 
         .comment-section {
-            margin-bottom: 25px;
+            margin-bottom: 24px;
         }
 
         .comment-label {
             display: block;
-            margin-bottom: 10px;
-            color: #666;
-            font-size: 14px;
+            margin-bottom: 8px;
+            color: #334155;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .optional-badge {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #4f46e5;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 6px;
         }
 
         textarea {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
             font-family: inherit;
             resize: vertical;
             min-height: 100px;
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
+            background: #f8fafc;
         }
 
         textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4f46e5;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
-        .submit-btn {
-            width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .submit-btn:active {
-            transform: scale(0.98);
-        }
-
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            display: none;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        textarea::placeholder {
+            color: #94a3b8;
         }
 
         .char-count {
             text-align: right;
             font-size: 12px;
-            color: #999;
-            margin-top: 5px;
+            color: #94a3b8;
+            margin-top: 6px;
+            font-weight: 500;
         }
 
-        @media (max-width: 400px) {
+        .char-count.warning {
+            color: #f59e0b;
+        }
+
+        .char-count.danger {
+            color: #ef4444;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .submit-btn.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .submit-btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid #fecaca;
+            display: none;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .footer {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .secure-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0fdf4;
+            color: #16a34a;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 380px) {
             .container {
-                padding: 25px 15px;
+                padding: 24px 16px;
             }
 
             h1 {
@@ -194,28 +330,36 @@
             }
 
             .star {
-                font-size: 40px;
+                font-size: 52px;
             }
 
-            .stars {
-                gap: 5px;
+            .stars-container {
+                gap: 8px;
             }
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .submit-btn.success {
+            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+            animation: successPulse 0.5s ease;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">🚑</div>
-            <h1>Tez járdemni bahalaw</h1>
-        </div>
-
-        <div class="team-info">
-            <div class="team-name">{{ callback.team.name }}</div>
-        </div>
-
-        <div class="instruction">
-            Xızmet sápasın bahalaw ushın júldızshańı basıń
+            <div class="logo-section">
+                <div class="logo">🚑</div>
+                <div class="logo-text">
+                    <div class="logo-title">103 Tez Járdem</div>
+                    <div class="logo-subtitle">Xızmet sapasın bahalaw</div>
+                </div>
+            </div>
+            <h1>Pikirlerińizdi bildiriń</h1>
         </div>
 
         <div class="error-message" id="errorMessage"></div>
@@ -223,23 +367,33 @@
         <form id="voteForm">
             <input type="hidden" name="rating" id="ratingInput" value="">
 
-            <div class="stars" id="stars">
-                <span class="star empty" data-rating="1">⭐</span>
-                <span class="star empty" data-rating="2">⭐</span>
-                <span class="star empty" data-rating="3">⭐</span>
-                <span class="star empty" data-rating="4">⭐</span>
-                <span class="star empty" data-rating="5">⭐</span>
+            <div class="rating-section">
+                <div class="section-label">Xızmet sapasın qalay bahalaysız?</div>
+
+                <div class="stars-container" id="stars">
+                    <span class="star empty" data-rating="1">⭐</span>
+                    <span class="star empty" data-rating="2">⭐</span>
+                    <span class="star empty" data-rating="3">⭐</span>
+                    <span class="star empty" data-rating="4">⭐</span>
+                    <span class="star empty" data-rating="5">⭐</span>
+                </div>
+
+                <div class="rating-description" id="ratingDescription">Júldızshalarģa basıń</div>
+                <div class="rating-hint">1 - Júdá jaman, 5 - Ájayıp</div>
             </div>
 
             <div class="comment-section">
-                <label class="comment-label">Pikirińizdi bildiriń (qaláwshańız boyınsha)</label>
+                <label class="comment-label">
+                    Pikirlerińizdi qosıń
+                    <span class="optional-badge">Qáleseńiz</span>
+                </label>
                 <textarea
                     name="comment"
                     id="comment"
-                    placeholder="Pikirińizdi jazıń..."
+                    placeholder="Bizdi qalay jaqsılawǵa boladı?"
                     maxlength="500"></textarea>
                 <div class="char-count">
-                    <span id="charCount">0</span>/500
+                    <span id="charCount">0</span>/500 tańba
                 </div>
             </div>
 
@@ -248,8 +402,14 @@
             </button>
         </form>
 
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
+        <div class="footer">
+            <p class="footer-text">
+                Siziń pikirlerińiz bizge mánisli.<br>
+                Járdeminiz ushın raxmet
+            </p>
+            <div class="secure-badge">
+                🔒 Qáwipsiz baylanıs
+            </div>
         </div>
     </div>
 
@@ -259,11 +419,20 @@
         const submitBtn = document.getElementById('submitBtn');
         const voteForm = document.getElementById('voteForm');
         const errorMessage = document.getElementById('errorMessage');
-        const loading = document.getElementById('loading');
         const commentTextarea = document.getElementById('comment');
         const charCount = document.getElementById('charCount');
+        const ratingDescription = document.getElementById('ratingDescription');
 
         let selectedRating = 0;
+
+        const ratingTexts = {
+            0: 'Júldızshalarģa basıń',
+            1: '⭐ júdá jaman',
+            2: '⭐⭐ Jaman',
+            3: '⭐⭐⭐ Qanaatlanarlıq',
+            4: '⭐⭐⭐⭐ Jaqsı',
+            5: '⭐⭐⭐⭐⭐ Ájayıp'
+        };
 
         // Star rating
         stars.forEach(star => {
@@ -272,8 +441,35 @@
                 ratingInput.value = selectedRating;
                 updateStars();
                 submitBtn.disabled = false;
+
+                // Haptic feedback
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            });
+
+            star.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.dataset.rating);
+                previewStars(rating);
             });
         });
+
+        document.getElementById('stars').addEventListener('mouseleave', function() {
+            updateStars();
+        });
+
+        function previewStars(rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('empty');
+                    star.classList.add('filled');
+                } else {
+                    star.classList.remove('filled');
+                    star.classList.add('empty');
+                }
+            });
+            ratingDescription.textContent = ratingTexts[rating];
+        }
 
         function updateStars() {
             stars.forEach((star, index) => {
@@ -285,11 +481,22 @@
                     star.classList.add('empty');
                 }
             });
+            ratingDescription.textContent = ratingTexts[selectedRating];
         }
 
         // Character count
         commentTextarea.addEventListener('input', function() {
-            charCount.textContent = this.value.length;
+            const length = this.value.length;
+            charCount.textContent = length;
+
+            const countElement = charCount.parentElement;
+            countElement.classList.remove('warning', 'danger');
+
+            if (length > 450) {
+                countElement.classList.add('danger');
+            } else if (length > 400) {
+                countElement.classList.add('warning');
+            }
         });
 
         // Form submission
@@ -297,16 +504,13 @@
             e.preventDefault();
 
             if (selectedRating === 0) {
-                showError('Bahańızdi tanlań');
+                showError('Bahańızdı tańlań');
                 return;
             }
 
-            // Disable form
             submitBtn.disabled = true;
-            loading.style.display = 'block';
-            voteForm.style.display = 'none';
+            submitBtn.classList.add('loading');
 
-            // Prepare data
             const formData = new FormData();
             formData.append('rating', selectedRating);
             formData.append('comment', commentTextarea.value.trim());
@@ -320,18 +524,25 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Redirect to thank you page
-                    window.location.href = '/vote/{{ vote_uuid }}/thanks/';
+                    submitBtn.classList.remove('loading');
+                    submitBtn.classList.add('success');
+                    submitBtn.textContent = '✓ Raxmet!';
+
+                    if (navigator.vibrate) {
+                        navigator.vibrate([50, 100, 50]);
+                    }
+
+                    setTimeout(() => {
+                        window.location.href = '/vote/{{ vote_uuid }}/thanks/';
+                    }, 1000);
                 } else {
                     showError(data.error || 'Qátelik júz berdi');
-                    loading.style.display = 'none';
-                    voteForm.style.display = 'block';
+                    submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
                 }
             } catch (error) {
-                showError('Qátelik júz berdi. Qaytadan urınıp kórińiz.');
-                loading.style.display = 'none';
-                voteForm.style.display = 'block';
+                showError('Baylanıs qátesi. Qaytadan urınıń.');
+                submitBtn.classList.remove('loading');
                 submitBtn.disabled = false;
             }
         });
@@ -339,6 +550,11 @@
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
+
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 5000);
